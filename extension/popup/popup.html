@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Exporter</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>AI Exporter</h1>
+    <p class="subtitle">Export ChatGPT → Claude, Gemini & more</p>
+  </header>
+
+  <div id="not-on-chatgpt" class="banner hidden">
+    Open <a href="https://chatgpt.com" target="_blank">chatgpt.com</a> and sign in, then click the extension again.
+  </div>
+
+  <main id="main-form">
+    <section>
+      <label class="section-label">Export scope</label>
+      <div class="radio-group">
+        <label><input type="radio" name="scope" value="all" checked /> All conversations</label>
+        <label><input type="radio" name="scope" value="current" /> Current conversation only</label>
+        <label><input type="radio" name="scope" value="new" /> New since last export</label>
+        <label><input type="radio" name="scope" value="search" /> Search by title</label>
+      </div>
+      <input type="text" id="search-query" class="hidden" placeholder="Filter by title keyword..." />
+    </section>
+
+    <section>
+      <label class="section-label">Formats</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="format" value="universal" checked /> Universal JSON <span class="tag">recommended</span></label>
+        <label><input type="checkbox" name="format" value="markdown" checked /> Markdown</label>
+        <label><input type="checkbox" name="format" value="claude" checked /> Claude JSON</label>
+        <label><input type="checkbox" name="format" value="claude-project" checked /> Claude Project <span class="tag">upload ready</span></label>
+        <label><input type="checkbox" name="format" value="gemini" checked /> Gemini JSON</label>
+        <label><input type="checkbox" name="format" value="gemini-import" checked /> Gemini Import <span class="tag">paste ready</span></label>
+        <label><input type="checkbox" name="format" value="openai" /> OpenAI JSON</label>
+        <label><input type="checkbox" name="format" value="raw" /> Raw ChatGPT JSON</label>
+      </div>
+    </section>
+
+    <section>
+      <label class="checkbox-inline">
+        <input type="checkbox" id="include-files" checked />
+        Download images &amp; attachments
+      </label>
+      <p class="hint">Adds files to the ZIP. Slower for large histories.</p>
+    </section>
+
+    <button id="export-btn" type="button">Export conversations</button>
+    <p id="status" class="status hidden"></p>
+  </main>
+
+  <footer>
+    <p>Runs locally in your browser. No data leaves your machine.</p>
+    <p class="author">by <a href="https://github.com/sisodiabhumca" target="_blank">Gaurav Sisodia</a></p>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

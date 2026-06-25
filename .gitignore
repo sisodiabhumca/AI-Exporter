@@ -1,0 +1,10 @@
+.DS_Store
+__MACOSX/
+.venv/
+dist/
+node_modules/
+*.zip
+claude-import/
+claude-project-upload/
+gemini-import/
+.env

@@ -1,0 +1,168 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 340px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #0d0d0d;
+  background: #fafafa;
+}
+
+header {
+  background: linear-gradient(135deg, #10a37f, #1a7f64);
+  color: #fff;
+  padding: 16px 18px;
+}
+
+header h1 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 11px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+main {
+  padding: 14px 18px;
+}
+
+section {
+  margin-bottom: 14px;
+}
+
+.section-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.radio-group,
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio-group label,
+.checkbox-group label,
+.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+input[type="text"] {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #10a37f;
+  box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.15);
+}
+
+.tag {
+  font-size: 10px;
+  background: #e8f5f0;
+  color: #1a7f64;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.hint {
+  font-size: 11px;
+  color: #888;
+  margin-top: 4px;
+  margin-left: 24px;
+}
+
+#export-btn {
+  width: 100%;
+  padding: 10px;
+  background: #10a37f;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+#export-btn:hover {
+  background: #0d8c6d;
+}
+
+#export-btn:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+.status {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #444;
+  text-align: center;
+}
+
+.banner {
+  margin: 12px 18px 0;
+  padding: 10px 12px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #664d03;
+}
+
+.banner a {
+  color: #1a7f64;
+  font-weight: 600;
+}
+
+footer {
+  padding: 10px 18px 14px;
+  border-top: 1px solid #eee;
+}
+
+footer p {
+  font-size: 10px;
+  color: #999;
+  text-align: center;
+}
+
+footer .author {
+  margin-top: 4px;
+}
+
+footer .author a {
+  color: #1a7f64;
+  text-decoration: none;
+}
+
+footer .author a:hover {
+  text-decoration: underline;
+}
+
+.hidden {
+  display: none !important;
+}
