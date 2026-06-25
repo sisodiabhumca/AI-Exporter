@@ -1,4 +1,4 @@
-Export conversations from **ChatGPT**, **Claude.ai**, and **Gemini** — including Enterprise/Team ChatGPT accounts — to formats ready for Notion, Obsidian, RAG pipelines, and cross-AI migration.
+Export conversations from **ChatGPT**, **Claude**, **Gemini**, **Copilot**, **DeepSeek**, and **Grok** — including Enterprise/Team ChatGPT accounts — to formats ready for Notion, Obsidian, RAG pipelines, and cross-AI migration.
 
 **No API keys. No cloud upload. Everything runs locally in your browser.**
 
@@ -12,7 +12,7 @@ OpenAI's built-in export is unavailable on many Team/Business plans. AI Exporter
 
 ## Features
 
-✅ **ChatGPT, Claude & Gemini** — one extension, three platforms  
+✅ **6 platforms** — ChatGPT, Claude, Gemini, Copilot, DeepSeek, Grok  
 ✅ **Enterprise / Team / Business** — auto-detects ChatGPT workspace accounts  
 ✅ **Export all conversations** — full pagination, even thousands of chats  
 ✅ **Selective message export** — in-chat panel with checkboxes and Shift+click ranges  
@@ -22,9 +22,10 @@ OpenAI's built-in export is unavailable on many Team/Business plans. AI Exporter
 ✅ **Notion & Obsidian** — optimized markdown for your knowledge base  
 ✅ **HTML bundle** — browse all exports in one offline HTML reader  
 ✅ **Local PDF** — print-ready HTML, Save as PDF with no server  
-✅ **RAG JSONL** — embedding-ready chunks for AI engineering pipelines  
-✅ **CLI companion** — `node tools/ai-exporter.mjs rag-jsonl export.zip`  
-✅ **Compliance manifest v2** — SHA-256 + chain of custody metadata  
+✅ **RAG JSONL** — embedding-ready chunks (turn-pair, message, or semantic strategy)  
+✅ **CLI companion** — `node tools/ai-exporter.mjs rag-jsonl` and `merge`  
+✅ **Scheduled exports** — optional weekly/daily recurring exports  
+✅ **Compliance manifest v2** — SHA-256 + audit log CSV  
 ✅ **Incremental export** — export only new chats since last run  
 ✅ **Image & attachment download** — optional file export  
 ✅ **Keyboard shortcut** — `Ctrl+Shift+E` / `⌘⇧E` opens export panel  

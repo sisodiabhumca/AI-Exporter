@@ -1,6 +1,6 @@
 # Chrome Web Store — Privacy Practices (copy-paste)
 
-**Extension:** AI Exporter v1.5.0  
+**Extension:** AI Exporter v1.7.0  
 **Author:** Gaurav Sisodia ([@sisodiabhumca](https://github.com/sisodiabhumca))  
 **Contact email:** sisodiabhumca@gmail.com
 
@@ -11,7 +11,7 @@ Use the text below on the **Privacy practices** tab of the Chrome Web Store Deve
 
 ## Single purpose description
 
-AI Exporter has a single purpose: to let users export their own AI conversation history from chatgpt.com, claude.ai, or gemini.google.com to their local computer in portable file formats (JSON, Markdown, RAG JSONL, etc.) so they can archive, migrate, or use that history in other tools. The extension does not modify these sites, inject ads, or collect data for any other purpose.
+AI Exporter has a single purpose: to let users export their own AI conversation history from supported chat platforms (ChatGPT, Claude, Gemini, Copilot, DeepSeek, Grok) to their local computer in portable file formats (JSON, Markdown, RAG JSONL, etc.) so they can archive, migrate, or use that history in other tools. The extension does not modify these sites, inject ads, or collect data for any other purpose.
 
 ---
 
@@ -19,17 +19,21 @@ AI Exporter has a single purpose: to let users export their own AI conversation 
 
 ### activeTab
 
-This permission is required so that when the user clicks the extension icon or starts an export, the extension can send a one-time message to the active tab (ChatGPT, Claude, or Gemini) to begin the export. The extension only interacts with the tab the user is currently viewing after the user explicitly clicks Export. No background access to other tabs is used.
+This permission is required so that when the user clicks the extension icon or starts an export, the extension can send a one-time message to the active tab (a supported AI chat site) to begin the export. The extension only interacts with the tab the user is currently viewing after the user explicitly clicks Export. No background access to other tabs is used.
 
-### Host permissions (chatgpt.com, claude.ai, gemini.google.com)
+### Host permissions (chatgpt.com, claude.ai, gemini.google.com, copilot.microsoft.com, chat.deepseek.com, grok.com)
 
 Host permissions are required because the extension must run on supported AI chat sites to:
 
 1. Inject the export UI (progress overlay and “Export chat” button) on pages the user visits
-2. Call each platform’s same-origin APIs using the user’s existing login session to download their conversations
+2. Call each platform’s same-origin APIs (or read page content for Copilot) using the user’s existing login session to download their conversations
 3. Save the exported files directly to the user’s computer via the browser
 
-All requests go only to OpenAI (chatgpt.com), Anthropic (claude.ai), or Google (gemini.google.com). Conversation data is not sent to any server operated by the extension developer.
+All requests go only to the supported platform domains (OpenAI, Anthropic, Google, Microsoft, DeepSeek, xAI). Conversation data is not sent to any server operated by the extension developer.
+
+### alarms and notifications
+
+These permissions support the **optional** scheduled export feature. When enabled by the user, the extension sets a recurring alarm to remind the extension to export on a schedule. A local notification is shown only if no supported platform tab is open at export time. No data is sent externally.
 
 ### storage
 
@@ -59,7 +63,7 @@ When certifying compliance with the [Developer Program Policies](https://develop
 - It does **not** use user data for purposes unrelated to its single purpose (exporting the user’s own chats)
 - It does **not** collect analytics, advertising data, or personal information on developer servers
 - All export processing happens **locally in the browser**
-- Data is only accessed from **chatgpt.com** using the user’s own session, at the user’s explicit request
+- Data is only accessed from **supported platform domains** using the user’s own session, at the user’s explicit request
 - The only data stored locally is an optional last-export timestamp
 
 **Privacy policy URL** (host on GitHub after you push the repo):
@@ -75,7 +79,7 @@ https://github.com/sisodiabhumca/ai-exporter/blob/main/store-listing/privacy-pol
 | Does your extension collect user data? | No — data stays on the user’s device |
 | Is data sold to third parties? | No |
 | Is data used for purposes unrelated to the extension? | No |
-| Is data encrypted in transit? | HTTPS to chatgpt.com only (OpenAI) |
+| Is data encrypted in transit? | HTTPS to platform domains only |
 
 ---
 
@@ -103,7 +107,7 @@ https://github.com/sisodiabhumca/ai-exporter/blob/main/store-listing/privacy-pol
 - [ ] storage justification entered
 - [ ] Data usage compliance certified (**Yes**)
 - [ ] Privacy policy URL added (GitHub repo must be public)
-- [ ] Extension ZIP uploaded (`dist/ai-exporter-chrome-v1.2.0.zip`)
+- [ ] Extension ZIP uploaded (`dist/ai-exporter-chrome-v1.7.0.zip`)
 - [ ] Store icon uploaded (`store-listing/icon-128.png`)
 - [ ] Screenshots uploaded (6 images)
 - [ ] **Save Draft** clicked

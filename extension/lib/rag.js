@@ -9,6 +9,11 @@ AIExporter.rag = {
     const maxChars = options.chunkSize || this.DEFAULT_CHUNK_SIZE;
     const overlap = options.chunkOverlap ?? this.DEFAULT_OVERLAP;
     const strategy = options.chunkStrategy || "turn-pair";
+
+    if (strategy === "semantic") {
+      return this.chunkSemantic(messages, maxChars, overlap);
+    }
+
     const chunks = [];
 
     if (strategy === "message") {
@@ -65,6 +70,66 @@ AIExporter.rag = {
     flush();
 
     return chunks;
+  },
+
+  chunkSemantic(messages, maxChars, overlap) {
+    const sections = [];
+    for (const msg of messages) {
+      if (msg.role !== "user" && msg.role !== "assistant") continue;
+      const label = msg.role === "user" ? "User" : "Assistant";
+      const text = (msg.content || "").trim();
+      if (!text) continue;
+
+      const parts = text.split(/\n(?=## )/);
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed) continue;
+        sections.push({
+          role: msg.role,
+          message_id: msg.id,
+          content: `### ${label}\n${trimmed}`,
+        });
+      }
+    }
+
+    const chunks = [];
+    let buffer = "";
+    let bufferIds = [];
+    let bufferRoles = [];
+
+    const flush = () => {
+      const text = buffer.trim();
+      if (!text) return;
+      const parts = this.splitText(text, maxChars, overlap);
+      parts.forEach((content, i) => {
+        chunks.push({
+          roles: [...bufferRoles],
+          content,
+          message_ids: [...bufferIds],
+          part_index: i,
+          part_total: parts.length,
+        });
+      });
+      buffer = "";
+      bufferIds = [];
+      bufferRoles = [];
+    };
+
+    for (const sec of sections) {
+      if (buffer.length + sec.content.length + 2 > maxChars && buffer) {
+        flush();
+      }
+      buffer += (buffer ? "\n\n" : "") + sec.content;
+      bufferIds.push(sec.message_id);
+      bufferRoles.push(sec.role);
+    }
+    flush();
+
+    return chunks.length ? chunks : this.chunkMessages(messages, {
+      chunkSize: maxChars,
+      chunkOverlap: overlap,
+      chunkStrategy: "turn-pair",
+    });
   },
 
   splitText(text, maxChars, overlap) {

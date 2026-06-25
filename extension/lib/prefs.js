@@ -22,6 +22,12 @@ AIExporter.prefs = {
     complianceManifest: false,
     filenameTemplate: "{title}_{id}",
     ragChunkSize: 2000,
+    ragChunkStrategy: "turn-pair",
+    includeToc: false,
+    scheduleEnabled: false,
+    scheduleIntervalHours: 168,
+    schedulePlatform: "chatgpt",
+    scheduleScope: "new",
   },
 
   PANEL_FORMATS: [

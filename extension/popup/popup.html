@@ -9,14 +9,12 @@
 <body>
   <header>
     <h1>AI Exporter <span id="platform-badge" class="platform-badge hidden"></span></h1>
-    <p id="subtitle" class="subtitle">Export ChatGPT, Claude & Gemini</p>
+    <p id="subtitle" class="subtitle">Export from 6 AI platforms</p>
   </header>
 
   <div id="not-supported" class="banner hidden">
-    Open <a href="https://chatgpt.com" target="_blank">chatgpt.com</a>,
-    <a href="https://claude.ai" target="_blank">claude.ai</a>, or
-    <a href="https://gemini.google.com" target="_blank">gemini.google.com</a>
-    and sign in, then click the extension again.
+    Open a supported AI chat site and sign in:
+    ChatGPT, Claude, Gemini, Copilot, DeepSeek, or Grok.
   </div>
 
   <main id="main-form">
@@ -29,7 +27,7 @@
         <label><input type="radio" name="scope" value="search" /> Search by title</label>
       </div>
       <input type="text" id="search-query" class="hidden" placeholder="Filter by title keyword..." />
-      <p class="hint hint-block">Use the <strong>Export</strong> button on any chat for selective message export.</p>
+      <p class="hint hint-block">Use the <strong>Export</strong> button on any chat for selective export.</p>
     </section>
 
     <section>
@@ -43,9 +41,9 @@
         <label><input type="checkbox" name="format" value="obsidian" checked /> Obsidian</label>
         <label><input type="checkbox" name="format" value="rag-jsonl" checked /> RAG JSONL</label>
         <label><input type="checkbox" name="format" value="claude" checked /> Claude JSON</label>
-        <label><input type="checkbox" name="format" value="claude-project" checked /> Claude Project</label>
+        <label><input type="checkbox" name="format" value="claude-project" /> Claude Project</label>
         <label><input type="checkbox" name="format" value="gemini" checked /> Gemini JSON</label>
-        <label><input type="checkbox" name="format" value="gemini-import" checked /> Gemini Import</label>
+        <label><input type="checkbox" name="format" value="gemini-import" /> Gemini Import</label>
         <label data-chatgpt-only><input type="checkbox" name="format" value="openai" /> OpenAI JSON</label>
         <label data-chatgpt-only><input type="checkbox" name="format" value="raw" /> Raw platform JSON</label>
       </div>
@@ -61,23 +59,51 @@
         <input type="checkbox" id="include-timestamps" checked />
         Include message timestamps
       </label>
+      <label class="checkbox-inline">
+        <input type="checkbox" id="include-toc" />
+        HTML table of contents (PDF)
+      </label>
       <label class="checkbox-inline" data-chatgpt-only>
         <input type="checkbox" id="preserve-citations" checked />
         Preserve citations &amp; sources
       </label>
       <label class="checkbox-inline">
         <input type="checkbox" id="compliance-manifest" />
-        Compliance manifest (SHA-256 v2)
+        Compliance manifest + audit log
       </label>
       <div class="filename-row">
         <label for="filename-template">Filename pattern</label>
         <input type="text" id="filename-template" value="{title}_{id}" placeholder="{title}_{id}" />
       </div>
       <div class="filename-row">
-        <label for="rag-chunk-size">RAG chunk size (chars)</label>
+        <label for="rag-chunk-size">RAG chunk size</label>
         <input type="number" id="rag-chunk-size" value="2000" min="500" max="8000" />
       </div>
-      <p class="hint">Variables: <code>{title}</code> <code>{id}</code> <code>{date}</code></p>
+      <div class="filename-row">
+        <label for="rag-chunk-strategy">RAG chunking</label>
+        <select id="rag-chunk-strategy">
+          <option value="turn-pair">Turn pairs</option>
+          <option value="semantic">Semantic (headings)</option>
+          <option value="message">Per message</option>
+        </select>
+      </div>
+    </section>
+
+    <section>
+      <label class="section-label">Scheduled export</label>
+      <label class="checkbox-inline">
+        <input type="checkbox" id="schedule-enabled" />
+        Enable recurring export
+      </label>
+      <div class="filename-row">
+        <label for="schedule-interval">Interval</label>
+        <select id="schedule-interval">
+          <option value="24">Daily</option>
+          <option value="168" selected>Weekly</option>
+          <option value="720">Monthly</option>
+        </select>
+      </div>
+      <p class="hint hint-block">Requires an open tab on the selected platform. You'll get a notification if none is open.</p>
     </section>
 
     <button id="export-btn" type="button">Export conversations</button>

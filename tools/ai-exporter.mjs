@@ -11,6 +11,7 @@ const COMMANDS = {
   "claude-project": "prepare-claude-project.mjs",
   "gemini-import": "prepare-gemini-import.mjs",
   "rag-jsonl": "prepare-rag-jsonl.mjs",
+  merge: "merge-exports.mjs",
 };
 
 function printHelp() {
@@ -24,6 +25,7 @@ Commands:
   claude-project   Prepare Claude Project knowledge files only
   gemini-import    Prepare Gemini paste-ready + API package
   rag-jsonl        Generate RAG-ready JSONL chunks from any export
+  merge            Merge multiple exports into one universal JSON
 
 Examples:
   node tools/ai-exporter.mjs rag-jsonl ~/Downloads/chatgpt-export.zip

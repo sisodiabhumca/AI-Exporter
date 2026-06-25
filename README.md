@@ -10,7 +10,16 @@ Everything runs locally in your browser. Your chats never leave your machine.
 
 ![Extension popup](store-listing/screenshots/01-extension-popup.png)
 
-**Version 1.5.0** — Phase 3: Claude & Gemini export, RAG JSONL, CLI tool, compliance v2.
+**Version 1.7.0** — Phase 5: Copilot, DeepSeek, Grok, merge CLI, semantic RAG, scheduled exports.
+
+## What's new in v1.7.0
+
+- **6 platforms** — ChatGPT, Claude, Gemini, Copilot, DeepSeek, Grok
+- **Universal merge CLI** — `node tools/ai-exporter.mjs merge export1.zip export2.zip`
+- **Semantic RAG chunking** — heading-aware splits for embedding pipelines
+- **Scheduled exports** — recurring weekly/daily exports via alarms
+- **Audit log CSV** — compliance export includes per-conversation audit trail
+- **HTML table of contents** — optional TOC for print/PDF exports
 
 ## What's new in v1.5.0
 
@@ -41,7 +50,7 @@ Everything runs locally in your browser. Your chats never leave your machine.
 - **Keyboard shortcut** — `Ctrl+Shift+E` / `⌘⇧E` opens panel
 - **Saved preferences** — remembers your format choices
 
-See [roadmap](docs/ROADMAP.md) for Phase 4 plan.
+See [roadmap](docs/ROADMAP.md) for Phase 6 plan.
 
 ## Supported platforms
 
@@ -50,6 +59,9 @@ See [roadmap](docs/ROADMAP.md) for Phase 4 plan.
 | ChatGPT | chatgpt.com | ✅ Enterprise/Team | ✅ |
 | Claude | claude.ai | ✅ | ✅ |
 | Gemini | gemini.google.com | ✅ | ✅ |
+| Copilot | copilot.microsoft.com | ✅ (DOM) | ✅ |
+| DeepSeek | chat.deepseek.com | ✅ | ✅ |
+| Grok | grok.com | ✅ | ✅ |
 
 ## Features
 
@@ -122,7 +134,10 @@ Or install from Chrome Web Store (once published) — see [PUBLISHING.md](PUBLIS
 
 ```bash
 # RAG JSONL from any export ZIP
-node tools/ai-exporter.mjs rag-jsonl ~/Downloads/chatgpt-export.zip
+node tools/ai-exporter.mjs rag-jsonl ~/Downloads/chatgpt-export.zip --chunk-size 1500
+
+# Merge exports from multiple platforms
+node tools/ai-exporter.mjs merge chatgpt-export.zip claude-export.zip grok-export.zip
 
 # Or use individual tools
 node tools/prepare-rag-jsonl.mjs export.zip --chunk-size 1500

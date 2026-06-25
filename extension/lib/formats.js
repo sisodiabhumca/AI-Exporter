@@ -8,7 +8,7 @@ AIExporter.formats = {
       schema: "ai-exporter-universal",
       source: meta.source || AIExporter.platform?.id || "chatgpt",
       exported_at: new Date().toISOString(),
-      exporter_version: meta.exporterVersion || "1.5.0",
+      exporter_version: meta.exporterVersion || "1.7.0",
       account_id: meta.accountId || null,
       conversation_count: conversations.length,
       conversations: conversations.map((c) =>
@@ -153,9 +153,10 @@ AIExporter.formats = {
     const summary = AIExporter.platform.parser.toConversationSummary(convo, options);
     const dateStr = AIExporter.utils.formatDateForDisplay(convo.create_time);
     const includeTimestamps = options.includeTimestamps !== false;
+    const includeToc = options.includeToc === true;
 
     const messagesHtml = summary.messages
-      .map((msg) => {
+      .map((msg, i) => {
         let roleLabel = msg.role === "user" ? "You" : "Assistant";
         if (msg.authorName) roleLabel = msg.authorName;
         const timeHtml =
@@ -177,12 +178,25 @@ AIExporter.formats = {
           }
         }
 
-        return `<article class="message message-${msg.role}">
+        const anchor = includeToc ? ` id="msg-${i}"` : "";
+        return `<article${anchor} class="message message-${msg.role}">
           <header><strong>${AIExporter.utils.escapeHtml(roleLabel)}</strong>${timeHtml}</header>
           <div class="msg-body">${body}</div>
         </article>`;
       })
       .join("\n");
+
+    let tocHtml = "";
+    if (includeToc && summary.messages.length > 1) {
+      const items = summary.messages
+        .map((msg, i) => {
+          const preview = (msg.content || "").replace(/\s+/g, " ").slice(0, 60);
+          const label = msg.role === "user" ? "You" : "Assistant";
+          return `<li><a href="#msg-${i}">${AIExporter.utils.escapeHtml(label)}: ${AIExporter.utils.escapeHtml(preview)}…</a></li>`;
+        })
+        .join("\n");
+      tocHtml = `<nav class="toc"><h2>Contents</h2><ol>${items}</ol></nav>`;
+    }
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -194,6 +208,9 @@ AIExporter.formats = {
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 32px 24px; color: #0d0d0d; line-height: 1.6; }
   h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
   .meta { color: #666; font-size: 0.875rem; margin-bottom: 2rem; }
+  .toc { background: #f5f5f5; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 2rem; }
+  .toc ol { margin: 0.5rem 0 0 1.25rem; padding: 0; }
+  .toc a { color: #1a7f64; text-decoration: none; }
   .message { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #eee; }
   .message-user { background: #f7f7f8; padding: 1rem; border-radius: 12px; border: none; }
   .msg-time { display: block; font-size: 0.75rem; color: #888; font-weight: normal; margin-top: 2px; }
@@ -205,6 +222,7 @@ AIExporter.formats = {
     body { padding: 0; max-width: none; }
     .message { page-break-inside: avoid; }
     .no-print { display: none; }
+    .toc a { color: #000; }
   }
 </style>
 </head>
@@ -214,6 +232,7 @@ AIExporter.formats = {
   </p>
   <h1>${AIExporter.utils.escapeHtml(summary.title)}</h1>
   <p class="meta">${dateStr ? AIExporter.utils.escapeHtml(dateStr) + " · " : ""}Exported via AI Exporter</p>
+  ${tocHtml}
   ${messagesHtml}
 </body>
 </html>`;

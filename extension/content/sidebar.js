@@ -94,6 +94,9 @@ AIExporter.sidebar = {
       chatgpt: "#10a37f",
       claude: "#d97757",
       gemini: "#1a73e8",
+      copilot: "#0078d4",
+      deepseek: "#4d6bfe",
+      grok: "#1a1a1a",
     };
     const color = colors[AIExporter.platform?.id] || colors.chatgpt;
     this.button.style.background = color;

@@ -177,6 +177,15 @@ footer p {
   margin-bottom: 4px;
 }
 
+.filename-row input,
+.filename-row select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
 .filename-row input {
   width: 100%;
   padding: 6px 8px;

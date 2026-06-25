@@ -1,21 +1,12 @@
 const ext = typeof globalThis.browser !== "undefined" ? globalThis.browser : globalThis.chrome;
 
 const PLATFORMS = {
-  chatgpt: {
-    hosts: ["chatgpt.com", "chat.openai.com"],
-    label: "ChatGPT",
-    url: "https://chatgpt.com",
-  },
-  claude: {
-    hosts: ["claude.ai"],
-    label: "Claude",
-    url: "https://claude.ai",
-  },
-  gemini: {
-    hosts: ["gemini.google.com"],
-    label: "Gemini",
-    url: "https://gemini.google.com",
-  },
+  chatgpt: { hosts: ["chatgpt.com", "chat.openai.com"], label: "ChatGPT", url: "https://chatgpt.com" },
+  claude: { hosts: ["claude.ai"], label: "Claude", url: "https://claude.ai" },
+  gemini: { hosts: ["gemini.google.com"], label: "Gemini", url: "https://gemini.google.com" },
+  copilot: { hosts: ["copilot.microsoft.com"], label: "Copilot", url: "https://copilot.microsoft.com" },
+  deepseek: { hosts: ["chat.deepseek.com"], label: "DeepSeek", url: "https://chat.deepseek.com" },
+  grok: { hosts: ["grok.com"], label: "Grok", url: "https://grok.com" },
 };
 
 const exportBtn = document.getElementById("export-btn");
@@ -74,9 +65,7 @@ function sendTabMessage(tabId, message) {
 }
 
 function getSelectedFormats() {
-  return [...document.querySelectorAll('input[name="format"]:checked')].map(
-    (el) => el.value
-  );
+  return [...document.querySelectorAll('input[name="format"]:checked')].map((el) => el.value);
 }
 
 function setSelectedFormats(formats) {
@@ -115,8 +104,10 @@ scopeRadios.forEach((radio) => {
 });
 
 async function loadPrefs() {
-  const { userPrefs } = await storageGet(["userPrefs"]);
+  const { userPrefs, exportSchedule } = await storageGet(["userPrefs", "exportSchedule"]);
   const prefs = userPrefs || {};
+  const schedule = exportSchedule || {};
+
   if (prefs.formats?.length) setSelectedFormats(prefs.formats);
   if (prefs.includeFiles !== undefined) {
     document.getElementById("include-files").checked = prefs.includeFiles;
@@ -130,26 +121,59 @@ async function loadPrefs() {
   if (prefs.complianceManifest !== undefined) {
     document.getElementById("compliance-manifest").checked = prefs.complianceManifest;
   }
+  if (prefs.includeToc !== undefined) {
+    document.getElementById("include-toc").checked = prefs.includeToc;
+  }
   if (prefs.filenameTemplate) {
     document.getElementById("filename-template").value = prefs.filenameTemplate;
   }
   if (prefs.ragChunkSize) {
     document.getElementById("rag-chunk-size").value = prefs.ragChunkSize;
   }
+  if (prefs.ragChunkStrategy) {
+    document.getElementById("rag-chunk-strategy").value = prefs.ragChunkStrategy;
+  }
+
+  document.getElementById("schedule-enabled").checked = !!schedule.enabled;
+  if (schedule.intervalHours) {
+    document.getElementById("schedule-interval").value = String(schedule.intervalHours);
+  }
 }
 
 async function savePrefs() {
+  const formats = getSelectedFormats();
+  const scheduleEnabled = document.getElementById("schedule-enabled").checked;
+  const intervalHours = parseInt(document.getElementById("schedule-interval").value, 10) || 168;
+
   await storageSet({
     userPrefs: {
-      formats: getSelectedFormats(),
+      formats,
       includeFiles: document.getElementById("include-files").checked,
       includeTimestamps: document.getElementById("include-timestamps").checked,
       preserveCitations: document.getElementById("preserve-citations").checked,
       complianceManifest: document.getElementById("compliance-manifest").checked,
+      includeToc: document.getElementById("include-toc").checked,
       filenameTemplate: document.getElementById("filename-template").value.trim() || "{title}_{id}",
       ragChunkSize: parseInt(document.getElementById("rag-chunk-size").value, 10) || 2000,
+      ragChunkStrategy: document.getElementById("rag-chunk-strategy").value,
+    },
+    exportSchedule: {
+      enabled: scheduleEnabled,
+      intervalHours,
+      platform: currentPlatform?.id || "chatgpt",
+      scope: "new",
+      formats,
     },
   });
+
+  if (ext.alarms) {
+    await ext.alarms.clear("ai-exporter-scheduled");
+    if (scheduleEnabled) {
+      await ext.alarms.create("ai-exporter-scheduled", {
+        periodInMinutes: Math.max(60, intervalHours * 60),
+      });
+    }
+  }
 }
 
 async function init() {
@@ -203,8 +227,10 @@ exportBtn.addEventListener("click", async () => {
         includeTimestamps: document.getElementById("include-timestamps").checked,
         preserveCitations: document.getElementById("preserve-citations").checked,
         complianceManifest: document.getElementById("compliance-manifest").checked,
+        includeToc: document.getElementById("include-toc").checked,
         filenameTemplate: document.getElementById("filename-template").value.trim() || "{title}_{id}",
         ragChunkSize: parseInt(document.getElementById("rag-chunk-size").value, 10) || 2000,
+        ragChunkStrategy: document.getElementById("rag-chunk-strategy").value,
       },
     });
 

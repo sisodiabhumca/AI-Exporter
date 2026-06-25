@@ -1,64 +1,76 @@
 # AI Exporter — Roadmap
 
 **Author:** Gaurav Sisodia · sisodiabhumca@gmail.com  
-**Version:** 1.5.0 (Phase 3 complete)
+**Version:** 1.7.0 (Phase 5 complete)
 
 ---
 
 ## Phase 1 — Core power features ✅ (v1.3.0)
 
-Rich content parser, in-chat panel, selective export, CSV, HTML/PDF, clipboard, keyboard shortcut, saved preferences.
-
----
+Rich content parser, in-chat panel, selective export, CSV, HTML/PDF, clipboard, keyboard shortcut.
 
 ## Phase 2 — Polish & differentiation ✅ (v1.4.0)
 
-Group chats, Notion/Obsidian, HTML bundle, filename templates, panel format picker, compliance manifest, parallel fetch.
-
----
+Group chats, Notion/Obsidian, HTML bundle, filename templates, compliance manifest.
 
 ## Phase 3 — Multi-platform & enterprise ✅ (v1.5.0)
 
-| Deliverable | Status |
-|-------------|--------|
-| Export from Claude.ai | ✅ Done |
-| Export from Gemini | ✅ Done |
-| RAG-ready JSONL chunks | ✅ Done |
-| CLI companion tool | ✅ Done |
-| Enhanced compliance mode (v2 manifest) | ✅ Done |
-
-### Phase 3 features shipped in v1.5.0
-
-- **Claude.ai export** — uses Claude's internal API with cookie auth, thinking blocks, tool calls
-- **Gemini export** — batchexecute API (`MaZiqc` list, `hNvQHb` read)
-- **Platform detection** — single extension works on chatgpt.com, claude.ai, gemini.google.com
-- **RAG JSONL** — `rag/chunks.jsonl` with turn-pair chunking for embedding pipelines
-- **CLI tool** — `node tools/ai-exporter.mjs rag-jsonl export.zip`
-- **Compliance v2** — aggregate SHA-256, chain of custody metadata, platform field
+Claude, Gemini export, RAG JSONL, CLI tool, compliance v2.
 
 ---
 
-## Phase 4 — Future (planned)
+## Phase 4 — Automation & enterprise ✅ (v1.6.0)
+
+| Deliverable | Status |
+|-------------|--------|
+| Semantic RAG chunking (heading-aware) | ✅ Done |
+| Scheduled recurring exports (alarms) | ✅ Done |
+| Compliance audit log CSV | ✅ Done |
+| Microsoft Copilot export (DOM) | ✅ Done |
+
+## Phase 5 — Universal platform ✅ (v1.7.0)
+
+| Deliverable | Status |
+|-------------|--------|
+| DeepSeek export | ✅ Done |
+| Grok export | ✅ Done |
+| Universal merge CLI | ✅ Done |
+| HTML/PDF table of contents | ✅ Done |
+| Firefox AMO submission checklist | ✅ Done |
+
+### v1.7.0 supported platforms
+
+| Platform | URL | Method |
+|----------|-----|--------|
+| ChatGPT | chatgpt.com | API |
+| Claude | claude.ai | API |
+| Gemini | gemini.google.com | batchexecute |
+| Copilot | copilot.microsoft.com | DOM scrape |
+| DeepSeek | chat.deepseek.com | API |
+| Grok | grok.com | REST API |
+
+---
+
+## Phase 6 — Future
 
 | Feature | Audience |
 |---------|----------|
-| Microsoft Copilot export | Enterprise users |
-| Semantic chunking (embedding-aware splits) | RAG teams |
-| Scheduled / automated exports | Power users |
-| Firefox Add-ons store publish | Firefox users |
+| Perplexity export | Researchers |
+| Qwen / Mistral export | Global users |
+| Headless export CLI with cookie auth | DevOps |
+| i18n (34 languages) | Global store listing |
 
 ---
 
-## How to test v1.5.0
-
-1. Reload extension at `chrome://extensions`
-2. **ChatGPT:** chatgpt.com → bulk export + panel
-3. **Claude:** claude.ai → open a chat → Export button → panel
-4. **Gemini:** gemini.google.com → open a chat → Export button
-5. Enable **RAG JSONL** format → check `rag/chunks.jsonl` in ZIP
-6. CLI: `node tools/ai-exporter.mjs rag-jsonl your-export.zip`
+## How to test v1.7.0
 
 ```bash
 bash scripts/package-extension.sh
-# dist/ai-exporter-chrome-v1.5.0.zip
+# dist/ai-exporter-chrome-v1.7.0.zip
 ```
+
+1. Test each platform: ChatGPT, Claude, Gemini, Copilot, DeepSeek, Grok
+2. Enable **semantic RAG chunking** → check `rag/chunks.jsonl`
+3. Enable **scheduled export** (weekly) with platform tab open
+4. Enable **compliance** → verify `audit-log.csv`
+5. Merge exports: `node tools/ai-exporter.mjs merge export1.zip export2.zip`

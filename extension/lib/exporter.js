@@ -36,6 +36,8 @@ AIExporter.exporter = {
       complianceManifest: overrides.complianceManifest ?? prefs.complianceManifest,
       filenameTemplate: overrides.filenameTemplate ?? prefs.filenameTemplate,
       ragChunkSize: overrides.ragChunkSize ?? prefs.ragChunkSize ?? 2000,
+      ragChunkStrategy: overrides.ragChunkStrategy ?? prefs.ragChunkStrategy ?? "turn-pair",
+      includeToc: overrides.includeToc ?? prefs.includeToc ?? false,
       conversationIds: null,
       selectedMessageIds: null,
       ...overrides,
@@ -72,6 +74,7 @@ AIExporter.exporter = {
       selectedMessageIds: options.selectedMessageIds,
       preserveCitations: options.preserveCitations,
       includeTimestamps: options.includeTimestamps,
+      includeToc: options.includeToc,
     };
   },
 
@@ -210,7 +213,7 @@ AIExporter.exporter = {
         data: JSON.stringify(
           AIExporter.formats.universal(prepared, {
             accountId: this.api().accountId,
-            exporterVersion: "1.5.0",
+            exporterVersion: "1.7.0",
             source: AIExporter.platform.id,
           }),
           null,
@@ -463,15 +466,25 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
 
       if (opts.complianceManifest) {
         ui.set("Generating compliance manifest...", 92);
+        const summaries = fullConversations.map((c) =>
+          this.parser().toConversationSummary(this.prepareConvo(c, opts), this.formatOptions(opts))
+        );
         const manifest = await AIExporter.compliance.buildManifest(zipEntries, {
           accountId: this.api().accountId,
           conversationCount: fullConversations.length,
-          exporterVersion: "1.5.0",
+          exporterVersion: "1.7.0",
           platform: AIExporter.platform.id,
         });
         zipEntries.push({
           path: "compliance/manifest.json",
           data: JSON.stringify(manifest, null, 2),
+        });
+        zipEntries.push({
+          path: "compliance/audit-log.csv",
+          data: AIExporter.compliance.buildAuditLog(summaries, {
+            platform: AIExporter.platform.id,
+            exported_at: manifest.exported_at,
+          }),
         });
         zipEntries.push({
           path: "compliance/README.md",

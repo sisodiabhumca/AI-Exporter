@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "AI Exporter",
-  "version": "1.5.0",
-  "description": "Export ChatGPT, Claude & Gemini chats — selective export, RAG JSONL, PDF, Notion, Obsidian. 100% local.",
-  "permissions": ["activeTab", "storage"],
+  "version": "1.7.0",
+  "description": "Export ChatGPT, Claude, Gemini, Copilot, Grok & DeepSeek — RAG JSONL, selective export, 100% local.",
+  "permissions": ["activeTab", "storage", "alarms", "notifications"],
   "background": {
     "service_worker": "background.js"
   },
@@ -11,7 +11,10 @@
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://claude.ai/*",
-    "https://gemini.google.com/*"
+    "https://gemini.google.com/*",
+    "https://copilot.microsoft.com/*",
+    "https://chat.deepseek.com/*",
+    "https://grok.com/*"
   ],
   "browser_specific_settings": {
     "gecko": {
@@ -47,7 +50,10 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://claude.ai/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://copilot.microsoft.com/*",
+        "https://chat.deepseek.com/*",
+        "https://grok.com/*"
       ],
       "js": [
         "lib/browser.js",
@@ -56,16 +62,23 @@
         "lib/compliance.js",
         "lib/batchexecute.js",
         "lib/rag.js",
+        "lib/dom-scraper.js",
         "lib/part-renderer.js",
         "lib/parser.js",
         "lib/parser-claude.js",
         "lib/parser-gemini.js",
+        "lib/parser-copilot.js",
+        "lib/parser-deepseek.js",
+        "lib/parser-grok.js",
         "lib/clipboard.js",
         "lib/print.js",
         "lib/prefs.js",
         "lib/api.js",
         "lib/api-claude.js",
         "lib/api-gemini.js",
+        "lib/api-copilot.js",
+        "lib/api-deepseek.js",
+        "lib/api-grok.js",
         "lib/platform.js",
         "lib/formats.js",
         "lib/exporter.js",

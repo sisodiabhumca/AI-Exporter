@@ -37,7 +37,7 @@ AIExporter.compliance = {
       schema: "ai-exporter-compliance-manifest",
       version: "2.0",
       exported_at: new Date().toISOString(),
-      exporter_version: meta.exporterVersion || "1.5.0",
+      exporter_version: meta.exporterVersion || "1.7.0",
       platform: meta.platform || AIExporter.platform?.id || "chatgpt",
       account_id: meta.accountId || null,
       conversation_count: meta.conversationCount || 0,
@@ -52,6 +52,29 @@ AIExporter.compliance = {
       },
       files,
     };
+  },
+
+  buildAuditLog(summaries, meta = {}) {
+    const lines = [
+      "conversation_id,title,platform,message_count,exported_at,model,is_group_chat",
+    ];
+    const exportedAt = meta.exported_at || new Date().toISOString();
+    const platform = meta.platform || "unknown";
+
+    for (const s of summaries) {
+      const row = [
+        s.id,
+        `"${(s.title || "").replace(/"/g, '""')}"`,
+        platform,
+        s.message_count || (s.messages || []).length,
+        exportedAt,
+        s.model || "",
+        s.is_group_chat ? "true" : "false",
+      ];
+      lines.push(row.join(","));
+    }
+
+    return lines.join("\n") + "\n";
   },
 
   complianceReadme(manifest) {

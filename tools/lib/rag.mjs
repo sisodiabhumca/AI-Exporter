@@ -5,6 +5,11 @@ export function chunkMessages(messages, options = {}) {
   const maxChars = options.chunkSize || DEFAULT_CHUNK_SIZE;
   const overlap = options.chunkOverlap ?? DEFAULT_OVERLAP;
   const strategy = options.chunkStrategy || "turn-pair";
+
+  if (strategy === "semantic") {
+    return chunkSemantic(messages, maxChars, overlap);
+  }
+
   const chunks = [];
 
   if (strategy === "message") {
@@ -60,6 +65,47 @@ export function chunkMessages(messages, options = {}) {
   flush();
 
   return chunks;
+}
+
+function chunkSemantic(messages, maxChars, overlap) {
+  const sections = [];
+  for (const msg of messages) {
+    if (msg.role !== "user" && msg.role !== "assistant") continue;
+    const label = msg.role === "user" ? "User" : "Assistant";
+    const text = (msg.content || "").trim();
+    if (!text) continue;
+    for (const part of text.split(/\n(?=## )/)) {
+      const trimmed = part.trim();
+      if (trimmed) {
+        sections.push({ role: msg.role, message_id: msg.id, content: `### ${label}\n${trimmed}` });
+      }
+    }
+  }
+
+  const chunks = [];
+  let buffer = "";
+  let bufferIds = [];
+  let bufferRoles = [];
+
+  const flush = () => {
+    const text = buffer.trim();
+    if (!text) return;
+    for (const content of splitText(text, maxChars, overlap)) {
+      chunks.push({ roles: [...bufferRoles], content, message_ids: [...bufferIds] });
+    }
+    buffer = "";
+    bufferIds = [];
+    bufferRoles = [];
+  };
+
+  for (const sec of sections) {
+    if (buffer.length + sec.content.length + 2 > maxChars && buffer) flush();
+    buffer += (buffer ? "\n\n" : "") + sec.content;
+    bufferIds.push(sec.message_id);
+    bufferRoles.push(sec.role);
+  }
+  flush();
+  return chunks.length ? chunks : chunkMessages(messages, { chunkSize: maxChars, chunkOverlap: overlap, chunkStrategy: "turn-pair" });
 }
 
 export function splitText(text, maxChars, overlap) {
