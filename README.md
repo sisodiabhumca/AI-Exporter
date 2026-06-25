@@ -1,16 +1,16 @@
 # AI Exporter
 
-**Export ChatGPT → Claude, Gemini & more**
+**Export from 6 AI platforms → portable formats**
 
 By **[Gaurav Sisodia](https://github.com/sisodiabhumca)**
 
-A browser extension that exports conversations from **ChatGPT**, **Claude.ai**, and **Gemini** — including **Enterprise, Team, and Business** ChatGPT accounts — into portable formats for **Notion**, **Obsidian**, RAG pipelines, and cross-AI migration.
+A browser extension that exports conversations from **ChatGPT**, **Claude**, **Gemini**, **Copilot**, **DeepSeek**, and **Grok** — including **Enterprise, Team, and Business** ChatGPT accounts — into portable formats for **Notion**, **Obsidian**, RAG pipelines, and cross-AI migration.
 
 Everything runs locally in your browser. Your chats never leave your machine.
 
-![Extension popup](store-listing/screenshots/01-extension-popup.png)
+![Extension popup — six platforms, formats, and scheduled exports](store-listing/screenshots/01-extension-popup.png)
 
-**Version 1.7.0** — Phase 5: Copilot, DeepSeek, Grok, merge CLI, semantic RAG, scheduled exports.
+**Version 1.7.0** — Copilot, DeepSeek, Grok, semantic RAG, merge CLI, scheduled exports.
 
 ## What's new in v1.7.0
 
@@ -56,35 +56,60 @@ See [roadmap](docs/ROADMAP.md) for Phase 6 plan.
 
 | Platform | URL | Bulk export | Selective panel |
 |----------|-----|-------------|-------------------|
-| ChatGPT | chatgpt.com | ✅ Enterprise/Team | ✅ |
-| Claude | claude.ai | ✅ | ✅ |
-| Gemini | gemini.google.com | ✅ | ✅ |
-| Copilot | copilot.microsoft.com | ✅ (DOM) | ✅ |
-| DeepSeek | chat.deepseek.com | ✅ | ✅ |
-| Grok | grok.com | ✅ | ✅ |
+| ChatGPT | [chatgpt.com](https://chatgpt.com) | ✅ Enterprise/Team | ✅ |
+| Claude | [claude.ai](https://claude.ai) | ✅ | ✅ |
+| Gemini | [gemini.google.com](https://gemini.google.com) | ✅ | ✅ |
+| Copilot | [copilot.microsoft.com](https://copilot.microsoft.com) | ✅ (DOM) | ✅ |
+| DeepSeek | [chat.deepseek.com](https://chat.deepseek.com) | ✅ | ✅ |
+| Grok | [grok.com](https://grok.com) | ✅ | ✅ |
+
+> **Note:** Copilot export uses DOM scraping and may be restricted in Microsoft Edge. It works in Chrome and Firefox.
 
 ## Features
 
+- **Six AI platforms** in one extension — auto-detects the site you're on
 - Works with **Enterprise / Team / Business** ChatGPT accounts
 - Uses your existing browser session — no API keys required
 - Exports **all conversations** with full pagination
 - **Single-chat export** via floating button on any conversation page
 - **Claude Project** format — upload-ready knowledge files
 - **Gemini Import** format — paste-ready for gemini.google.com
+- **RAG JSONL** with turn-pair, per-message, or semantic chunking
+- **Scheduled exports** — optional daily/weekly/monthly recurring exports
 - Multiple portable formats in one ZIP download
-- Optional image & attachment download
+- Optional image & attachment download (ChatGPT)
 - Incremental export ("new since last export")
 - Search/filter by conversation title
 - **Chrome, Edge, Brave, and Firefox** support
 
 ## Screenshots
 
-| | |
-|---|---|
-| ![Floating export button](store-listing/screenshots/02-floating-export-button.png) | ![Export panel](store-listing/screenshots/07-export-panel.png) |
-| In-chat export button | Selective export panel |
-| ![Export formats](store-listing/screenshots/04-export-formats.png) | ![Claude import](store-listing/screenshots/05-claude-import.png) |
-| Multiple formats in one ZIP | Import to Claude Projects |
+### Extension popup
+
+Six platforms, format picker, semantic RAG chunking, and scheduled export options.
+
+![Extension popup](store-listing/screenshots/01-extension-popup.png)
+
+### In-chat export
+
+| Floating export button | Selective export panel |
+|------------------------|------------------------|
+| ![Floating export button on any AI chat page](store-listing/screenshots/02-floating-export-button.png) | ![Selective export panel with format picker](store-listing/screenshots/07-export-panel.png) |
+| One-click export on any supported platform | Pick messages, formats, copy or download ZIP |
+
+### Export progress & output
+
+| Real-time progress | ZIP folder structure |
+|--------------------|----------------------|
+| ![Export progress overlay](store-listing/screenshots/03-export-progress.png) | ![Export formats in one ZIP](store-listing/screenshots/04-export-formats.png) |
+| Live status while conversations download | Universal JSON, RAG JSONL, Notion, compliance, and more |
+
+### Cross-AI migration
+
+| Import to Claude | Import to Gemini |
+|------------------|------------------|
+| ![Claude Project import package](store-listing/screenshots/05-claude-import.png) | ![Gemini paste-ready import files](store-listing/screenshots/06-gemini-import.png) |
+| Upload knowledge files to Claude Projects | Paste-ready context for gemini.google.com |
 
 [Full user guide with step-by-step instructions →](docs/USER_GUIDE.md)
 
@@ -92,10 +117,10 @@ See [roadmap](docs/ROADMAP.md) for Phase 6 plan.
 
 | Format | File | Best for |
 |--------|------|----------|
-| **Universal JSON** | `universal/conversations.json` | Any AI tool, scripts, RAG pipelines |
-| **Markdown** | `markdown/*.md` | Copy-paste into Claude, Gemini, etc. |
+| **Universal JSON** | `universal/conversations.json` | Any AI tool, scripts, merge CLI |
+| **Markdown** | `markdown/*.md` | Copy-paste into any chat |
 | **CSV** | `csv/*.csv` | Spreadsheets, analysts |
-| **HTML / PDF** | `html/*.html` | Print → Save as PDF locally |
+| **HTML / PDF** | `html/*.html` | Print → Save as PDF locally (optional TOC) |
 | **Notion** | `notion/*.md` | Paste into Notion pages |
 | **Obsidian** | `obsidian/*.md` | Obsidian vault with frontmatter |
 | **HTML Bundle** | `html-bundle/index.html` | Browse all chats offline |
@@ -103,10 +128,10 @@ See [roadmap](docs/ROADMAP.md) for Phase 6 plan.
 | **Claude JSON** | `claude/*.json` | Claude API / programmatic use |
 | **Gemini Import** | `gemini-import/paste-ready/*.txt` | Paste into gemini.google.com |
 | **Gemini JSON** | `gemini/conversations.json` | Google Gemini API |
-| **OpenAI JSON** | `openai/conversations.json` | OpenAI API format |
-| **Raw JSON** | `raw/*.json` | Full ChatGPT data with metadata |
-| **Compliance** | `compliance/manifest.json` | SHA-256 audit manifest v2 (optional) |
-| **RAG JSONL** | `rag/chunks.jsonl` | Embedding pipelines, LangChain, LlamaIndex |
+| **OpenAI JSON** | `openai/conversations.json` | OpenAI API format (ChatGPT) |
+| **Raw JSON** | `raw/*.json` | Full platform data with metadata |
+| **Compliance** | `compliance/manifest.json` + `audit-log.csv` | SHA-256 audit manifest (optional) |
+| **RAG JSONL** | `rag/chunks.jsonl` | Embedding pipelines — turn-pair, message, or semantic |
 
 ## Install
 
@@ -124,11 +149,16 @@ Or install from Chrome Web Store (once published) — see [PUBLISHING.md](PUBLIS
 1. Open `about:debugging#/runtime/this-firefox`
 2. Click **Load Temporary Add-on** → select `extension/manifest.json`
 
+See [Firefox submit checklist](store-listing/FIREFOX-SUBMIT-CHECKLIST.md).
+
 ## Usage
 
-1. Go to [chatgpt.com](https://chatgpt.com), [claude.ai](https://claude.ai), or [gemini.google.com](https://gemini.google.com) and sign in
+1. Open a supported site and sign in:
+   - [chatgpt.com](https://chatgpt.com) · [claude.ai](https://claude.ai) · [gemini.google.com](https://gemini.google.com)
+   - [copilot.microsoft.com](https://copilot.microsoft.com) · [chat.deepseek.com](https://chat.deepseek.com) · [grok.com](https://grok.com)
 2. Click the **AI Exporter** icon → choose formats → **Export conversations**
 3. Or click **Export chat** on any conversation page → use the panel for selective export
+4. Optionally enable **recurring export** in the popup for scheduled backups
 
 ## CLI tools
 
@@ -136,11 +166,11 @@ Or install from Chrome Web Store (once published) — see [PUBLISHING.md](PUBLIS
 # RAG JSONL from any export ZIP
 node tools/ai-exporter.mjs rag-jsonl ~/Downloads/chatgpt-export.zip --chunk-size 1500
 
-# Merge exports from multiple platforms
+# Merge exports from multiple platforms into one universal JSON
 node tools/ai-exporter.mjs merge chatgpt-export.zip claude-export.zip grok-export.zip
 
 # Or use individual tools
-node tools/prepare-rag-jsonl.mjs export.zip --chunk-size 1500
+node tools/prepare-rag-jsonl.mjs export.zip --chunk-size 1500 --strategy semantic
 ```
 
 ## Import helpers
