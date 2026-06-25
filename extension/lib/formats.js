@@ -4,15 +4,15 @@ var AIExporter = AIExporter || {};
 AIExporter.formats = {
   universal(conversations, meta = {}) {
     return {
-      version: "1.0",
+      version: "1.1",
       schema: "ai-exporter-universal",
-      source: "chatgpt",
+      source: meta.source || AIExporter.platform?.id || "chatgpt",
       exported_at: new Date().toISOString(),
-      exporter_version: meta.exporterVersion || "1.0.0",
+      exporter_version: meta.exporterVersion || "1.5.0",
       account_id: meta.accountId || null,
       conversation_count: conversations.length,
       conversations: conversations.map((c) =>
-        AIExporter.parser.toConversationSummary(c)
+        AIExporter.platform.parser.toConversationSummary(c)
       ),
     };
   },
@@ -21,7 +21,7 @@ AIExporter.formats = {
     return {
       object: "chatgpt.export",
       data: conversations.map((convo) => {
-        const summary = AIExporter.parser.toConversationSummary(convo);
+        const summary = AIExporter.platform.parser.toConversationSummary(convo);
         return {
           id: summary.id,
           title: summary.title,
@@ -39,7 +39,7 @@ AIExporter.formats = {
 
   claude(conversations) {
     return conversations.map((convo) => {
-      const summary = AIExporter.parser.toConversationSummary(convo);
+      const summary = AIExporter.platform.parser.toConversationSummary(convo);
       return {
         title: summary.title,
         created_at: summary.created_at,
@@ -57,7 +57,7 @@ AIExporter.formats = {
     return {
       export_format: "gemini-import",
       conversations: conversations.map((convo) => {
-        const summary = AIExporter.parser.toConversationSummary(convo);
+        const summary = AIExporter.platform.parser.toConversationSummary(convo);
         return {
           title: summary.title,
           turns: summary.messages
@@ -71,10 +71,40 @@ AIExporter.formats = {
     };
   },
 
-  markdown(convo, fileMap = {}) {
-    const title = convo.title || "Untitled";
+  messagesToMarkdown(summary, fileMap = {}, options = {}) {
+    const lines = [];
+    const includeTimestamps = options.includeTimestamps !== false;
+
+    for (const msg of summary.messages) {
+      let roleLabel = AIExporter.utils.getSpeakerLabel(msg);
+      if (includeTimestamps && msg.timestamp) {
+        roleLabel += ` — ${msg.timestamp}`;
+      }
+
+      const parts = [msg.content];
+      for (const img of msg.images || []) {
+        parts.push(
+          fileMap[img.fileId]
+            ? `![image](${fileMap[img.fileId]})`
+            : "[image]"
+        );
+      }
+      for (const att of msg.attachments || []) {
+        if (fileMap[att.fileId]) {
+          parts.push(`\n📎 [${att.name}](${fileMap[att.fileId]})`);
+        }
+      }
+
+      const text = parts.filter(Boolean).join("\n").trim();
+      if (text) lines.push(`## ${roleLabel}`, "", text, "");
+    }
+    return lines.join("\n");
+  },
+
+  markdown(convo, fileMap = {}, options = {}) {
+    const summary = AIExporter.platform.parser.toConversationSummary(convo, options);
     const dateStr = AIExporter.utils.formatDateForDisplay(convo.create_time);
-    const lines = [`# ${title}`, ""];
+    const lines = [`# ${summary.title}`, ""];
 
     if (dateStr) lines.push(`*${dateStr}*`, "");
     lines.push(
@@ -82,38 +112,251 @@ AIExporter.formats = {
       "> Portable format — paste into Claude, Gemini, or any AI chat",
       ""
     );
-
-    const messages = AIExporter.parser.extractMessages(convo);
-    for (const msg of messages) {
-      const roleLabel =
-        msg.role.charAt(0).toUpperCase() + msg.role.slice(1);
-      const parts = [msg.content];
-
-      for (const img of msg.images) {
-        if (fileMap[img.fileId]) {
-          parts.push(`![image](${fileMap[img.fileId]})`);
-        } else {
-          parts.push("[image]");
-        }
-      }
-
-      for (const att of msg.attachments) {
-        if (fileMap[att.fileId]) {
-          parts.push(`\n📎 [${att.name}](${fileMap[att.fileId]})`);
-        }
-      }
-
-      const text = parts.filter(Boolean).join("\n").trim();
-      if (text) {
-        lines.push(`## ${roleLabel}`, "", text, "");
-      }
-    }
-
+    lines.push(this.messagesToMarkdown(summary, fileMap, options));
     return lines.join("\n");
   },
 
+  csvEscape(value) {
+    const str = String(value ?? "").replace(/"/g, '""');
+    return `"${str}"`;
+  },
+
+  csvRowsForSummary(summary) {
+    const rows = [
+      ["conversation_id", "title", "message_id", "role", "author", "timestamp", "content"].join(
+        ","
+      ),
+    ];
+    for (const msg of summary.messages) {
+      rows.push(
+        [
+          this.csvEscape(summary.id),
+          this.csvEscape(summary.title),
+          this.csvEscape(msg.id),
+          this.csvEscape(msg.role),
+          this.csvEscape(msg.authorName || ""),
+          this.csvEscape(msg.timestamp || ""),
+          this.csvEscape(msg.content),
+        ].join(",")
+      );
+    }
+    return rows.join("\n");
+  },
+
+  csv(conversations) {
+    return conversations
+      .map((c) => this.csvRowsForSummary(AIExporter.platform.parser.toConversationSummary(c)))
+      .join("\n\n");
+  },
+
+  html(convo, fileMap = {}, options = {}) {
+    const summary = AIExporter.platform.parser.toConversationSummary(convo, options);
+    const dateStr = AIExporter.utils.formatDateForDisplay(convo.create_time);
+    const includeTimestamps = options.includeTimestamps !== false;
+
+    const messagesHtml = summary.messages
+      .map((msg) => {
+        let roleLabel = msg.role === "user" ? "You" : "Assistant";
+        if (msg.authorName) roleLabel = msg.authorName;
+        const timeHtml =
+          includeTimestamps && msg.timestamp
+            ? `<time class="msg-time">${AIExporter.utils.escapeHtml(msg.timestamp)}</time>`
+            : "";
+        let body = AIExporter.utils.escapeHtml(msg.content).replace(/\n/g, "<br>");
+        body = body
+          .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+            return `<pre class="code-block" data-lang="${lang}"><code>${AIExporter.utils.escapeHtml(code.trim())}</code></pre>`;
+          })
+          .replace(/&lt;details&gt;/g, "<details>")
+          .replace(/&lt;\/details&gt;/g, "</details>")
+          .replace(/&lt;summary&gt;([\s\S]*?)&lt;\/summary&gt;/g, "<summary>$1</summary>");
+
+        for (const img of msg.images || []) {
+          if (fileMap[img.fileId]) {
+            body += `<img src="${fileMap[img.fileId]}" alt="image" class="msg-image"/>`;
+          }
+        }
+
+        return `<article class="message message-${msg.role}">
+          <header><strong>${AIExporter.utils.escapeHtml(roleLabel)}</strong>${timeHtml}</header>
+          <div class="msg-body">${body}</div>
+        </article>`;
+      })
+      .join("\n");
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>${AIExporter.utils.escapeHtml(summary.title)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 32px 24px; color: #0d0d0d; line-height: 1.6; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .meta { color: #666; font-size: 0.875rem; margin-bottom: 2rem; }
+  .message { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #eee; }
+  .message-user { background: #f7f7f8; padding: 1rem; border-radius: 12px; border: none; }
+  .msg-time { display: block; font-size: 0.75rem; color: #888; font-weight: normal; margin-top: 2px; }
+  pre.code-block { background: #1e1e1e; color: #f8f8f2; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; }
+  .msg-image { max-width: 100%; border-radius: 8px; margin-top: 0.5rem; }
+  details { background: #f9f9f9; padding: 0.75rem; border-radius: 8px; margin-top: 0.5rem; }
+  summary { cursor: pointer; font-style: italic; color: #666; }
+  @media print {
+    body { padding: 0; max-width: none; }
+    .message { page-break-inside: avoid; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+  <p class="no-print" style="background:#e8f5f0;padding:12px;border-radius:8px;font-size:14px;">
+    <strong>Save as PDF:</strong> Press <kbd>Ctrl+P</kbd> (or <kbd>⌘+P</kbd>) → choose "Save as PDF". 100% local — no upload.
+  </p>
+  <h1>${AIExporter.utils.escapeHtml(summary.title)}</h1>
+  <p class="meta">${dateStr ? AIExporter.utils.escapeHtml(dateStr) + " · " : ""}Exported via AI Exporter</p>
+  ${messagesHtml}
+</body>
+</html>`;
+  },
+
+  notion(convo, fileMap = {}, options = {}) {
+    const summary = AIExporter.platform.parser.toConversationSummary(convo, options);
+    const lines = [`# ${summary.title}`, ""];
+
+    if (summary.is_group_chat) {
+      lines.push(
+        `> 👥 Group conversation · Participants: ${summary.participants.join(", ")}`,
+        ""
+      );
+    }
+
+    lines.push(
+      "> Exported from ChatGPT via AI Exporter",
+      "> Import: paste into a Notion page or use Notion import",
+      ""
+    );
+
+    for (const msg of summary.messages) {
+      const speaker = AIExporter.utils.getSpeakerLabel(msg);
+      const time = options.includeTimestamps !== false && msg.timestamp
+        ? ` · ${msg.timestamp}`
+        : "";
+      lines.push(`### ${speaker}${time}`, "");
+      lines.push(msg.content, "");
+      if (msg.images?.length) {
+        for (const img of msg.images) {
+          lines.push(fileMap[img.fileId] ? `🖼 ${fileMap[img.fileId]}` : "🖼 [image]", "");
+        }
+      }
+      lines.push("---", "");
+    }
+    return lines.join("\n");
+  },
+
+  obsidian(convo, fileMap = {}, options = {}) {
+    const summary = AIExporter.platform.parser.toConversationSummary(convo, options);
+    const safeTitle = summary.title.replace(/"/g, '\\"');
+    const tags = summary.is_group_chat
+      ? "ai-export, chatgpt, group-chat"
+      : "ai-export, chatgpt";
+
+    const lines = [
+      "---",
+      `title: "${safeTitle}"`,
+      `date: ${summary.created_at || new Date().toISOString()}`,
+      "source: chatgpt",
+      `tags: [${tags}]`,
+      "---",
+      "",
+      `# ${summary.title}`,
+      "",
+    ];
+
+    if (summary.is_group_chat) {
+      lines.push(
+        `> [!info] Group chat`,
+        `> Participants: ${summary.participants.join(", ")}`,
+        ""
+      );
+    }
+
+    for (const msg of summary.messages) {
+      const speaker = AIExporter.utils.getSpeakerLabel(msg);
+      const callout = msg.role === "user" ? "note" : "tip";
+      lines.push(`> [!${callout}] ${speaker}`, "");
+
+      for (const line of msg.content.split("\n")) {
+        lines.push(`> ${line}`);
+      }
+      lines.push("", "");
+    }
+    return lines.join("\n");
+  },
+
+  htmlBundle(entries) {
+    const sidebarItems = entries
+      .map(
+        (e, i) =>
+          `<a href="#chat-${i}" class="sidebar-link" data-idx="${i}">${AIExporter.utils.escapeHtml(e.title)}</a>`
+      )
+      .join("\n");
+
+    const sections = entries
+      .map((e, i) => {
+        const body = e.html.replace(/<\/?html[^>]*>|<\/?head[^>]*>|<\/?body[^>]*>/gi, "");
+        return `<section id="chat-${i}" class="chat-section" ${i > 0 ? 'style="display:none"' : ""}>
+          <div class="section-inner">${body}</div>
+        </section>`;
+      })
+      .join("\n");
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>ChatGPT Export — AI Exporter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; height: 100vh; color: #0d0d0d; }
+  .sidebar { width: 280px; min-width: 280px; background: #f9f9f9; border-right: 1px solid #e5e5e5; overflow-y: auto; padding: 16px 0; }
+  .sidebar h2 { font-size: 14px; padding: 0 16px 12px; color: #666; font-weight: 600; }
+  .sidebar-link { display: block; padding: 8px 16px; font-size: 13px; color: #0d0d0d; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-link:hover { background: #ececec; }
+  .sidebar-link.active { background: #e8f5f0; font-weight: 600; }
+  .main { flex: 1; overflow-y: auto; padding: 24px; }
+  .chat-section .section-inner { max-width: 800px; margin: 0 auto; }
+  .no-print { background: #e8f5f0; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+  @media print { .sidebar, .no-print { display: none; } .main { padding: 0; } .chat-section { display: block !important; page-break-before: always; } }
+</style>
+</head>
+<body>
+  <nav class="sidebar">
+    <h2>${entries.length} Conversations</h2>
+    ${sidebarItems}
+  </nav>
+  <main class="main">
+    <p class="no-print"><strong>Save as PDF:</strong> Ctrl+P / ⌘+P → Save as PDF. Click a chat in the sidebar to browse.</p>
+    ${sections}
+  </main>
+  <script>
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const idx = link.dataset.idx;
+        document.querySelectorAll('.chat-section').forEach(s => s.style.display = 'none');
+        document.getElementById('chat-' + idx).style.display = 'block';
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      });
+    });
+    document.querySelector('.sidebar-link')?.classList.add('active');
+  </script>
+</body>
+</html>`;
+  },
+
   geminiImportPasteReady(convo) {
-    const summary = AIExporter.parser.toConversationSummary(convo);
+    const summary = AIExporter.platform.parser.toConversationSummary(convo);
     const lines = [
       "I'm sharing a previous ChatGPT conversation for context.",
       `Title: ${summary.title}`,
@@ -132,7 +375,7 @@ AIExporter.formats = {
   },
 
   geminiImportContextPrompt(convo) {
-    const summary = AIExporter.parser.toConversationSummary(convo);
+    const summary = AIExporter.platform.parser.toConversationSummary(convo);
     const topics = summary.messages
       .filter((m) => m.role === "user")
       .slice(0, 3)
@@ -163,7 +406,7 @@ AIExporter.formats = {
   },
 
   geminiImportFiles(convo) {
-    const summary = AIExporter.parser.toConversationSummary(convo);
+    const summary = AIExporter.platform.parser.toConversationSummary(convo);
     const id = summary.id || convo.conversation_id || convo.id || "unknown";
     const baseName = AIExporter.utils.sanitizeFilename(summary.title);
     const shortId = id.slice(0, 8);
@@ -207,7 +450,7 @@ AIExporter.formats = {
       version: "1.0",
       conversation_count: conversations.length,
       files: conversations.map((convo) => {
-        const summary = AIExporter.parser.toConversationSummary(convo);
+        const summary = AIExporter.platform.parser.toConversationSummary(convo);
         const id = summary.id || "unknown";
         const baseName = AIExporter.utils.sanitizeFilename(summary.title);
         return {
@@ -256,7 +499,7 @@ node tools/prepare-gemini-import.mjs path/to/chatgpt-export.zip
   },
 
   claudeProjectKnowledge(convo, fileMap = {}) {
-    const summary = AIExporter.parser.toConversationSummary(convo);
+    const summary = AIExporter.platform.parser.toConversationSummary(convo);
     const lines = [
       `# ${summary.title}`,
       "",
@@ -286,7 +529,7 @@ node tools/prepare-gemini-import.mjs path/to/chatgpt-export.zip
   },
 
   claudeProjectFiles(convo, fileMap = {}) {
-    const summary = AIExporter.parser.toConversationSummary(convo);
+    const summary = AIExporter.platform.parser.toConversationSummary(convo);
     const id = summary.id || convo.conversation_id || convo.id || "unknown";
     const baseName = AIExporter.utils.sanitizeFilename(summary.title);
     const filename = `${baseName}_${id.slice(0, 8)}.md`;
@@ -333,7 +576,7 @@ node tools/prepare-gemini-import.mjs path/to/chatgpt-export.zip
   claudeProjectManifest(conversations) {
     const files = [];
     for (const convo of conversations) {
-      const summary = AIExporter.parser.toConversationSummary(convo);
+      const summary = AIExporter.platform.parser.toConversationSummary(convo);
       const id = summary.id || "unknown";
       const baseName = AIExporter.utils.sanitizeFilename(summary.title);
       const content = this.claudeProjectKnowledge(convo);
@@ -416,6 +659,18 @@ See \`tools/README.md\` for details.
 `;
   },
 
+  ragJsonl(conversations, options = {}) {
+    const summaries = conversations.map((c) =>
+      AIExporter.platform.parser.toConversationSummary(c, options)
+    );
+    return AIExporter.rag.buildJsonlRecords(summaries, {
+      source: AIExporter.platform?.id || "chatgpt",
+      chunkSize: options.ragChunkSize,
+      chunkOverlap: options.ragChunkOverlap,
+      chunkStrategy: options.ragChunkStrategy,
+    });
+  },
+
   importGuide() {
     return `# AI Exporter — Import Guide
 
@@ -430,6 +685,13 @@ Your ChatGPT conversations have been exported in multiple formats. Here's how to
 - \`gemini-import/\` — Paste-ready and API files for Google Gemini
 - \`gemini/conversations.json\` — Gemini-style turns format (combined)
 - \`markdown/\` — Human-readable .md files (great for copy-paste)
+- \`html/\` — Print-ready HTML (use browser Print → Save as PDF)
+- \`html/index.html\` — Multi-chat browser with sidebar navigation
+- \`notion/\` — Notion-ready markdown with callouts
+- \`obsidian/\` — Obsidian vault markdown with YAML frontmatter
+- \`csv/\` — Spreadsheet-friendly export for analysis
+- \`rag/chunks.jsonl\` — RAG-ready JSONL chunks for embedding pipelines
+- \`compliance/manifest.json\` — SHA-256 integrity manifest (if enabled)
 - \`raw/\` — Original ChatGPT API JSON (complete data)
 - \`files/\` — Downloaded images and attachments (if enabled)
 
@@ -464,6 +726,18 @@ Use files in \`gemini-import/context-prompts/\` for long conversations with fram
 Use \`gemini-import/api/conversations.json\` with the Google AI SDK.
 
 **Import helper:** \`node tools/prepare-gemini-import.mjs your-export.zip\`
+
+## Notion
+
+Upload or paste files from \`notion/\` into Notion pages. Formatted with headings and dividers.
+
+## Obsidian
+
+Copy files from \`obsidian/\` into your Obsidian vault. Includes YAML frontmatter and callout syntax.
+
+## Multi-chat browser
+
+Open \`html/index.html\` in your browser to navigate all exported conversations in one place.
 
 ## OpenAI API / Custom GPTs
 

@@ -46,5 +46,7 @@ We may update this policy. Changes will be reflected in the extension's GitHub r
 
 ## Contact
 
-- GitHub: [github.com/sisodiabhumca/ai-exporter](https://github.com/sisodiabhumca/ai-exporter)
-- Issues: [github.com/sisodiabhumca/ai-exporter/issues](https://github.com/sisodiabhumca/ai-exporter/issues)
+**Gaurav Sisodia**  
+Email: [sisodiabhumca@gmail.com](mailto:sisodiabhumca@gmail.com)  
+GitHub: [github.com/sisodiabhumca/ai-exporter](https://github.com/sisodiabhumca/ai-exporter)  
+Issues: [github.com/sisodiabhumca/ai-exporter/issues](https://github.com/sisodiabhumca/ai-exporter/issues)

@@ -1,1 +1,1 @@
-Export all ChatGPT conversations to Claude, Gemini & more. Works with Enterprise/Team. Local, private, one-click.
+Export ChatGPT, Claude & Gemini to JSON, Markdown, RAG JSONL, PDF. Selective export. Enterprise-ready. 100% local.

@@ -52,4 +52,45 @@ AIExporter.utils = {
       .replace("T", " ")
       .slice(0, 16) + " UTC";
   },
+
+  formatDateShort() {
+    return new Date().toISOString().slice(0, 10);
+  },
+
+  getSpeakerLabel(msg) {
+    if (msg.authorName) return msg.authorName;
+    if (msg.role === "assistant") return "Assistant";
+    if (msg.role === "user") return "You";
+    return msg.role.charAt(0).toUpperCase() + msg.role.slice(1);
+  },
+
+  applyFilenameTemplate(template, vars) {
+    const t = template || "{title}_{id}";
+    return this.sanitizeFilename(
+      t
+        .replace(/\{date\}/g, vars.date || this.formatDateShort())
+        .replace(/\{title\}/g, vars.title || "untitled")
+        .replace(/\{id\}/g, vars.id || "unknown")
+        .replace(/\{time\}/g, vars.time || Date.now().toString())
+    );
+  },
+
+  async mapPool(items, limit, fn) {
+    const results = new Array(items.length);
+    let index = 0;
+
+    async function worker() {
+      while (index < items.length) {
+        const i = index;
+        index += 1;
+        results[i] = await fn(items[i], i);
+      }
+    }
+
+    const workers = Array(Math.min(limit, items.length))
+      .fill(null)
+      .map(() => worker());
+    await Promise.all(workers);
+    return results;
+  },
 };

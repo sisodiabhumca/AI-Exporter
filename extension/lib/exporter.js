@@ -5,19 +5,39 @@ AIExporter.exporter = {
   DEFAULT_FORMATS: [
     "universal",
     "markdown",
+    "csv",
+    "html",
+    "notion",
+    "obsidian",
+    "rag-jsonl",
     "claude",
     "claude-project",
     "gemini",
     "gemini-import",
   ],
 
-  defaultOptions(overrides = {}) {
+  api() {
+    return AIExporter.platform.api;
+  },
+
+  parser() {
+    return AIExporter.platform.parser;
+  },
+
+  async defaultOptions(overrides = {}) {
+    const prefs = await AIExporter.prefs.get();
     return {
       scope: "all",
       searchQuery: "",
-      formats: [...this.DEFAULT_FORMATS],
-      includeFiles: true,
+      formats: overrides.formats || [...prefs.formats],
+      includeFiles: overrides.includeFiles ?? prefs.includeFiles,
+      includeTimestamps: overrides.includeTimestamps ?? prefs.includeTimestamps,
+      preserveCitations: overrides.preserveCitations ?? prefs.preserveCitations,
+      complianceManifest: overrides.complianceManifest ?? prefs.complianceManifest,
+      filenameTemplate: overrides.filenameTemplate ?? prefs.filenameTemplate,
+      ragChunkSize: overrides.ragChunkSize ?? prefs.ragChunkSize ?? 2000,
       conversationIds: null,
+      selectedMessageIds: null,
       ...overrides,
     };
   },
@@ -27,17 +47,47 @@ AIExporter.exporter = {
     return result.lastExportTime || 0;
   },
 
+  buildFname(convo, options) {
+    const id = convo.conversation_id || convo.id || "unknown";
+    const title = convo.title || "Untitled";
+    return AIExporter.utils.applyFilenameTemplate(options.filenameTemplate, {
+      title,
+      id: id.slice(0, 8),
+      date: AIExporter.utils.formatDateShort(),
+    });
+  },
+
+  prepareConvo(convo, options) {
+    if (options.selectedMessageIds?.length) {
+      return AIExporter.parser.filterConvoMessages(
+        convo,
+        options.selectedMessageIds
+      );
+    }
+    return convo;
+  },
+
+  formatOptions(options) {
+    return {
+      selectedMessageIds: options.selectedMessageIds,
+      preserveCitations: options.preserveCitations,
+      includeTimestamps: options.includeTimestamps,
+    };
+  },
+
   async processConversation(convo, options, fname) {
     const zipEntries = [];
     const fileMap = {};
+    const prepared = this.prepareConvo(convo, options);
+    const fmtOpts = this.formatOptions(options);
 
-    if (options.includeFiles) {
-      const fileRefs = AIExporter.parser.extractFileReferences(convo);
+    if (options.includeFiles && AIExporter.platform.id === "chatgpt") {
+      const fileRefs = AIExporter.parser.extractFileReferences(prepared);
       const usedNames = new Set();
 
       for (const ref of fileRefs) {
         try {
-          const { filename: dlName, data } = await AIExporter.api.downloadFile(
+          const { filename: dlName, data } = await this.api().downloadFile(
             ref.fileId,
             ref.filename
           );
@@ -47,7 +97,7 @@ AIExporter.exporter = {
           );
           zipEntries.push({ path: `files/${fname}/${actualName}`, data });
           fileMap[ref.fileId] = `../files/${fname}/${actualName}`;
-          await AIExporter.utils.sleep(AIExporter.api.DELAY_MS);
+          await AIExporter.utils.sleep(this.api().DELAY_MS);
         } catch {
           // skip failed file downloads
         }
@@ -57,28 +107,62 @@ AIExporter.exporter = {
     if (options.formats.includes("raw")) {
       zipEntries.push({
         path: `raw/${fname}.json`,
-        data: JSON.stringify(convo, null, 2),
+        data: JSON.stringify(prepared, null, 2),
       });
     }
 
     if (options.formats.includes("markdown")) {
       zipEntries.push({
         path: `markdown/${fname}.md`,
-        data: AIExporter.formats.markdown(convo, fileMap),
+        data: AIExporter.formats.markdown(prepared, fileMap, fmtOpts),
+      });
+    }
+
+    if (options.formats.includes("html")) {
+      zipEntries.push({
+        path: `html/${fname}.html`,
+        data: AIExporter.formats.html(prepared, fileMap, fmtOpts),
+      });
+    }
+
+    if (options.formats.includes("notion")) {
+      zipEntries.push({
+        path: `notion/${fname}.md`,
+        data: AIExporter.formats.notion(prepared, fileMap, fmtOpts),
+      });
+    }
+
+    if (options.formats.includes("obsidian")) {
+      zipEntries.push({
+        path: `obsidian/${fname}.md`,
+        data: AIExporter.formats.obsidian(prepared, fileMap, fmtOpts),
+      });
+    }
+
+    if (options.formats.includes("csv")) {
+      const summary = this.parser().toConversationSummary(prepared, fmtOpts);
+      zipEntries.push({
+        path: `csv/${fname}.csv`,
+        data: AIExporter.formats.csvRowsForSummary(summary),
       });
     }
 
     if (options.formats.includes("claude")) {
-      const summary = AIExporter.parser.toConversationSummary(convo);
+      const summary = this.parser().toConversationSummary(prepared, fmtOpts);
       zipEntries.push({
         path: `claude/${fname}.json`,
         data: JSON.stringify(
           {
             title: summary.title,
             created_at: summary.created_at,
+            is_group_chat: summary.is_group_chat,
             messages: summary.messages
               .filter((m) => m.role === "user" || m.role === "assistant")
-              .map((m) => ({ role: m.role, content: m.content })),
+              .map((m) => ({
+                role: m.role,
+                content: m.content,
+                author: m.authorName || null,
+              })),
           },
           null,
           2
@@ -87,7 +171,10 @@ AIExporter.exporter = {
     }
 
     if (options.formats.includes("claude-project")) {
-      const projectFiles = AIExporter.formats.claudeProjectFiles(convo, fileMap);
+      const projectFiles = AIExporter.formats.claudeProjectFiles(
+        prepared,
+        fileMap
+      );
       for (const file of projectFiles) {
         zipEntries.push({
           path: `claude-project/knowledge/${file.filename}`,
@@ -97,7 +184,7 @@ AIExporter.exporter = {
     }
 
     if (options.formats.includes("gemini-import")) {
-      const geminiFiles = AIExporter.formats.geminiImportFiles(convo);
+      const geminiFiles = AIExporter.formats.geminiImportFiles(prepared);
       for (const file of geminiFiles) {
         zipEntries.push({
           path: `gemini-import/${file.path}`,
@@ -106,17 +193,25 @@ AIExporter.exporter = {
       }
     }
 
-    return zipEntries;
+    return { zipEntries, fileMap, htmlBody: options.formats.includes("html")
+      ? AIExporter.formats.html(prepared, fileMap, fmtOpts) : null,
+      title: prepared.title || "Untitled", fname };
   },
 
-  appendAggregateFormats(zipEntries, fullConversations, options) {
+  appendAggregateFormats(zipEntries, fullConversations, options, htmlEntries = []) {
+    const prepared = fullConversations.map((c) =>
+      this.prepareConvo(c, options)
+    );
+    const fmtOpts = this.formatOptions(options);
+
     if (options.formats.includes("universal")) {
       zipEntries.push({
         path: "universal/conversations.json",
         data: JSON.stringify(
-          AIExporter.formats.universal(fullConversations, {
-            accountId: AIExporter.api.accountId,
-            exporterVersion: "1.2.0",
+          AIExporter.formats.universal(prepared, {
+            accountId: this.api().accountId,
+            exporterVersion: "1.5.0",
+            source: AIExporter.platform.id,
           }),
           null,
           2
@@ -128,7 +223,7 @@ AIExporter.exporter = {
       zipEntries.push({
         path: "openai/conversations.json",
         data: JSON.stringify(
-          AIExporter.formats.openai(fullConversations),
+          AIExporter.formats.openai(prepared),
           null,
           2
         ),
@@ -139,17 +234,31 @@ AIExporter.exporter = {
       zipEntries.push({
         path: "gemini/conversations.json",
         data: JSON.stringify(
-          AIExporter.formats.gemini(fullConversations),
+          AIExporter.formats.gemini(prepared),
           null,
           2
         ),
       });
     }
 
-    if (options.formats.includes("claude-project") && fullConversations.length) {
+    if (options.formats.includes("csv") && prepared.length) {
+      zipEntries.push({
+        path: "csv/all-conversations.csv",
+        data: AIExporter.formats.csv(prepared),
+      });
+    }
+
+    if (options.formats.includes("html") && htmlEntries.length > 1) {
+      zipEntries.push({
+        path: "html/index.html",
+        data: AIExporter.formats.htmlBundle(htmlEntries),
+      });
+    }
+
+    if (options.formats.includes("claude-project") && prepared.length) {
       zipEntries.push({
         path: "claude-project/PROJECT_SETUP.md",
-        data: AIExporter.formats.claudeProjectSetup(fullConversations.length),
+        data: AIExporter.formats.claudeProjectSetup(prepared.length),
       });
       zipEntries.push({
         path: "claude-project/custom-instructions.txt",
@@ -158,22 +267,22 @@ AIExporter.exporter = {
       zipEntries.push({
         path: "claude-project/manifest.json",
         data: JSON.stringify(
-          AIExporter.formats.claudeProjectManifest(fullConversations),
+          AIExporter.formats.claudeProjectManifest(prepared),
           null,
           2
         ),
       });
     }
 
-    if (options.formats.includes("gemini-import") && fullConversations.length) {
+    if (options.formats.includes("gemini-import") && prepared.length) {
       zipEntries.push({
         path: "gemini-import/GEMINI_SETUP.md",
-        data: AIExporter.formats.geminiImportSetup(fullConversations.length),
+        data: AIExporter.formats.geminiImportSetup(prepared.length),
       });
       zipEntries.push({
         path: "gemini-import/manifest.json",
         data: JSON.stringify(
-          AIExporter.formats.geminiImportManifest(fullConversations),
+          AIExporter.formats.geminiImportManifest(prepared),
           null,
           2
         ),
@@ -181,10 +290,34 @@ AIExporter.exporter = {
       zipEntries.push({
         path: "gemini-import/api/conversations.json",
         data: JSON.stringify(
-          AIExporter.formats.gemini(fullConversations),
+          AIExporter.formats.gemini(prepared),
           null,
           2
         ),
+      });
+    }
+
+    if (options.formats.includes("rag-jsonl") && prepared.length) {
+      zipEntries.push({
+        path: "rag/chunks.jsonl",
+        data: AIExporter.formats.ragJsonl(prepared, {
+          ...fmtOpts,
+          ragChunkSize: options.ragChunkSize,
+          ragChunkOverlap: options.ragChunkOverlap,
+          ragChunkStrategy: options.ragChunkStrategy,
+        }),
+      });
+      zipEntries.push({
+        path: "rag/README.md",
+        data: `# RAG JSONL Export
+
+One JSON object per line, ready for embedding pipelines.
+
+Regenerate with custom chunking:
+\`\`\`bash
+node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
+\`\`\`
+`,
       });
     }
 
@@ -200,10 +333,10 @@ AIExporter.exporter = {
     let filtered = list;
 
     if (options.scope === "current") {
-      const id = AIExporter.sidebar?.getConversationIdFromUrl?.();
+      const id = AIExporter.platform.getConversationIdFromUrl?.();
       if (!id) {
         return Promise.reject(
-          new Error("Open a conversation first, or use the Export chat button.")
+          new Error("Open a conversation first, or use the Export panel.")
         );
       }
       filtered = list.filter((c) => c.id === id);
@@ -237,15 +370,16 @@ AIExporter.exporter = {
   },
 
   async run(options = {}) {
-    const opts = this.defaultOptions(options);
+    const opts = await this.defaultOptions(options);
     const ui = AIExporter.ui.show();
     const zipEntries = [];
     const fullConversations = [];
+    const htmlEntries = [];
     let failed = 0;
 
     try {
-      ui.set("Connecting to ChatGPT...");
-      const account = await AIExporter.api.init();
+      ui.set(`Connecting to ${AIExporter.platform.label}...`);
+      const account = await this.api().init();
       ui.set(
         "Connected",
         5,
@@ -258,19 +392,15 @@ AIExporter.exporter = {
 
       let list;
       if (opts.scope === "current") {
-        const id = AIExporter.sidebar?.getConversationIdFromUrl?.();
-        if (!id) {
-          throw new Error(
-            "Open a conversation first, or use the Export chat button."
-          );
-        }
+        const id = AIExporter.platform.getConversationIdFromUrl?.();
+        if (!id) throw new Error("Open a conversation first, or use the Export panel.");
         list = [{ id, title: "Current conversation" }];
       } else if (opts.conversationIds?.length === 1) {
         list = [{ id: opts.conversationIds[0], title: "Current conversation" }];
       } else if (opts.conversationIds?.length > 1) {
         list = opts.conversationIds.map((id) => ({ id, title: id.slice(0, 8) }));
       } else {
-        list = await AIExporter.api.listConversations((progress) => {
+        list = await this.api().listConversations((progress) => {
           const pct = Math.round((progress.current / progress.total) * 15);
           ui.set(
             `Fetching conversation list... ${progress.current}/${progress.total}`,
@@ -292,48 +422,80 @@ AIExporter.exporter = {
         return { success: true, count: 0 };
       }
 
-      ui.set(`Downloading ${total} conversation${total === 1 ? "" : "s"}...`, 15);
+      const selectionNote = opts.selectedMessageIds?.length
+        ? ` (${opts.selectedMessageIds.length} msgs)`
+        : "";
+      ui.set(`Downloading ${total} chat${total === 1 ? "" : "s"}...${selectionNote}`, 15);
 
-      for (let i = 0; i < total; i += 1) {
-        if (ui.isCancelled()) throw new Error("Cancelled");
+      let completed = 0;
+      await AIExporter.utils.mapPool(filtered, 3, async (item) => {
+        if (ui.isCancelled()) return;
 
-        const { id, title: rawTitle } = filtered[i];
+        const { id, title: rawTitle } = item;
         const title = rawTitle || "Untitled";
-        const fname = `${AIExporter.utils.sanitizeFilename(title)}_${id.slice(0, 8)}`;
-        const pct = 15 + Math.round(((i + 1) / total) * 70);
-
-        ui.set(`Downloading ${i + 1} of ${total}`, pct, title);
 
         try {
-          const convo = await AIExporter.api.getConversation(id);
-          if (!convo.title && title !== id.slice(0, 8)) {
-            convo.title = title;
-          }
+          const convo = await this.api().getConversation(id);
+          if (!convo.title && title !== id.slice(0, 8)) convo.title = title;
+
           fullConversations.push(convo);
-          const entries = await this.processConversation(convo, opts, fname);
-          zipEntries.push(...entries);
+          const fname = this.buildFname(convo, opts);
+          const result = await this.processConversation(convo, opts, fname);
+          zipEntries.push(...result.zipEntries);
+
+          if (result.htmlBody) {
+            htmlEntries.push({ title: result.title, html: result.htmlBody, fname });
+          }
         } catch {
           failed += 1;
         }
 
-        await AIExporter.utils.sleep(AIExporter.api.DELAY_MS);
-      }
+        completed += 1;
+        const pct = 15 + Math.round((completed / total) * 70);
+        ui.set(`Downloading ${completed} of ${total}`, pct, title);
+        await AIExporter.utils.sleep(this.api().DELAY_MS);
+      });
 
       if (ui.isCancelled()) throw new Error("Cancelled");
 
       ui.set("Building export files...", 88);
-      this.appendAggregateFormats(zipEntries, fullConversations, opts);
+      this.appendAggregateFormats(zipEntries, fullConversations, opts, htmlEntries);
+
+      if (opts.complianceManifest) {
+        ui.set("Generating compliance manifest...", 92);
+        const manifest = await AIExporter.compliance.buildManifest(zipEntries, {
+          accountId: this.api().accountId,
+          conversationCount: fullConversations.length,
+          exporterVersion: "1.5.0",
+          platform: AIExporter.platform.id,
+        });
+        zipEntries.push({
+          path: "compliance/manifest.json",
+          data: JSON.stringify(manifest, null, 2),
+        });
+        zipEntries.push({
+          path: "compliance/README.md",
+          data: AIExporter.compliance.complianceReadme(manifest),
+        });
+      }
 
       ui.set("Creating ZIP archive...", 95);
       const blob = AIExporter.zip.buildBlob(zipEntries);
-      const date = new Date().toISOString().slice(0, 10);
+      const date = AIExporter.utils.formatDateShort();
       const suffix =
-        opts.conversationIds?.length === 1
-          ? `-${AIExporter.utils.sanitizeFilename(fullConversations[0]?.title || "chat")}`
+        opts.conversationIds?.length === 1 && fullConversations[0]
+          ? `-${this.buildFname(fullConversations[0], opts)}`
           : "";
-      AIExporter.zip.downloadBlob(blob, `chatgpt-export${suffix}-${date}.zip`);
+      const prefix = AIExporter.platform.exportPrefix;
+      AIExporter.zip.downloadBlob(blob, `${prefix}-export${suffix}-${date}.zip`);
 
       await AIExporter.browser.storageSet({ lastExportTime: Date.now() / 1000 });
+      await AIExporter.prefs.save({
+        formats: opts.formats,
+        includeFiles: opts.includeFiles,
+        complianceManifest: opts.complianceManifest,
+        filenameTemplate: opts.filenameTemplate,
+      });
 
       const succeeded = total - failed;
       let msg = `Done! Exported ${succeeded} conversation${succeeded === 1 ? "" : "s"}.`;
@@ -352,12 +514,10 @@ AIExporter.exporter = {
   },
 
   runSingle(conversationId, options = {}) {
-    return this.run(
-      this.defaultOptions({
-        ...options,
-        scope: "all",
-        conversationIds: [conversationId],
-      })
-    );
+    return this.run({
+      ...options,
+      scope: "all",
+      conversationIds: [conversationId],
+    });
   },
 };

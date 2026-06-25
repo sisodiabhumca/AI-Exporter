@@ -29,6 +29,16 @@ header h1 {
   margin-top: 2px;
 }
 
+.platform-badge {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.25);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
 main {
   padding: 14px 18px;
 }
@@ -148,6 +158,52 @@ footer p {
   font-size: 10px;
   color: #999;
   text-align: center;
+}
+
+.hint-block {
+  margin-top: 8px;
+  margin-left: 0;
+}
+
+.filename-row {
+  margin-top: 10px;
+}
+
+.filename-row label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.filename-row input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.hint code {
+  background: #eee;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+footer .shortcut {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #aaa;
+}
+
+footer kbd {
+  background: #eee;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
 }
 
 footer .author {

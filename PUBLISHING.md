@@ -12,7 +12,7 @@ bash scripts/package-extension.sh
 
 Outputs:
 - `store-listing/screenshots/*.png` — Chrome Web Store images (1280×800)
-- `dist/ai-exporter-chrome-v1.2.0.zip` — upload package
+- `dist/ai-exporter-chrome-v1.5.0.zip` — upload package
 
 ## 2. Publish to Chrome Web Store
 
@@ -30,7 +30,9 @@ Outputs:
    - `04-export-formats.png`
    - `05-claude-import.png`
    - `06-gemini-import.png`
-5. **Privacy policy URL:** `https://github.com/sisodiabhumca/ai-exporter/blob/main/store-listing/privacy-policy.md`
+   - `07-export-panel.png`
+5. **Store icon:** upload `store-listing/icon-128.png` (128×128 PNG, also included in the ZIP via `extension/icons/icon128.png`)
+6. **Privacy policy URL:** `https://github.com/sisodiabhumca/ai-exporter/blob/main/store-listing/privacy-policy.md`
 6. **Permissions justification:** See privacy policy — only accesses chatgpt.com with user's session
 7. Submit for review (typically 1–3 business days)
 
@@ -68,6 +70,7 @@ gh repo create sisodiabhumca/ai-exporter --public --source=. --push
 | Asset | Path |
 |-------|------|
 | Screenshots | `store-listing/screenshots/` |
+| **Store icon (128×128)** | `store-listing/icon-128.png` |
 | Short description | `store-listing/short-description.txt` |
 | Full description | `store-listing/description.md` |
 | Privacy policy | `store-listing/privacy-policy.md` |

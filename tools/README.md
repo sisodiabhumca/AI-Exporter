@@ -1,6 +1,28 @@
 # AI Exporter Tools
 
-Command-line helpers to prepare ChatGPT exports for Claude and Gemini.
+Command-line helpers to transform exports and prepare import packages.
+
+## Unified CLI
+
+```bash
+node tools/ai-exporter.mjs <command> <export.zip|folder> [options]
+```
+
+| Command | Description |
+|---------|-------------|
+| `rag-jsonl` | Generate RAG-ready JSONL chunks |
+| `claude-import` | Full Claude import package |
+| `claude-project` | Claude Project knowledge files only |
+| `gemini-import` | Gemini paste-ready + API package |
+
+## RAG JSONL
+
+```bash
+node tools/ai-exporter.mjs rag-jsonl ~/Downloads/chatgpt-export.zip
+node tools/prepare-rag-jsonl.mjs export.zip --chunk-size 1500 --overlap 200
+```
+
+Output: `rag-jsonl/chunks.jsonl` — one JSON object per line with `content`, `conversation_id`, `chunk_index`, `metadata`.
 
 ## Claude import
 
@@ -22,19 +44,11 @@ Output: `claude-import/`
 node tools/prepare-claude-project.mjs ~/Downloads/chatgpt-export.zip
 ```
 
-Output: `claude-project-upload/knowledge/`
-
 ## Gemini import
 
 ```bash
 node tools/prepare-gemini-import.mjs ~/Downloads/chatgpt-export.zip
 ```
-
-Output: `gemini-import/`
-- `paste-ready/` — copy-paste into gemini.google.com
-- `context-prompts/` — long chats with framing instructions
-- `api/` — Gemini API JSON (`user` / `model` turns)
-- `GEMINI_SETUP.md` — setup guide
 
 ## Options
 
@@ -44,11 +58,17 @@ All tools support:
 node tools/prepare-<tool>.mjs <export-folder-or-zip> [--out <directory>]
 ```
 
+RAG JSONL additionally supports:
+- `--chunk-size <n>` — max characters per chunk (default 2000)
+- `--overlap <n>` — overlap between chunks (default 200)
+- `--strategy turn-pair|message` — chunking strategy
+
 ## Supported input formats
 
 | Path in export | Format |
 |----------------|--------|
 | `universal/conversations.json` | Universal JSON (preferred) |
+| `rag/chunks.jsonl` | Pre-built RAG chunks |
 | `gemini/conversations.json` | Gemini JSON |
 | `claude/*.json` | Per-conversation Claude JSON |
 | `markdown/*.md` | Markdown files |
@@ -57,3 +77,7 @@ node tools/prepare-<tool>.mjs <export-folder-or-zip> [--out <directory>]
 
 - Node.js 18+
 - `unzip` command (only when passing a `.zip` file)
+
+## Note on live export
+
+Exporting directly from ChatGPT, Claude, or Gemini requires the browser extension. CLI tools transform already-exported ZIP files.

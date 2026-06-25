@@ -111,5 +111,10 @@ AIExporter.browser.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "AI_EXPORTER_OPEN_PANEL") {
+    AIExporter.panel.open().then(() => sendResponse({ success: true }));
+    return true;
+  }
+
   return false;
 });

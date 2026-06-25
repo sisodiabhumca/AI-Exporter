@@ -7,8 +7,7 @@ AIExporter.sidebar = {
   observer: null,
 
   getConversationIdFromUrl() {
-    const match = location.pathname.match(/\/c\/([a-f0-9-]{36})/i);
-    return match ? match[1] : null;
+    return AIExporter.platform.getConversationIdFromUrl();
   },
 
   injectStyles() {
@@ -73,15 +72,15 @@ AIExporter.sidebar = {
     this.button = document.createElement("button");
     this.button.id = "ai-exporter-fab";
     this.button.type = "button";
-    this.button.title = "Export this conversation (AI Exporter)";
+    this.button.title = "Open AI Exporter panel";
     this.button.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path d="M12 3v12m0 0l4-4m-4 4l-4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>
       </svg>
-      <span class="ai-exporter-fab-label">Export chat</span>
+      <span class="ai-exporter-fab-label">Export</span>
     `;
 
-    this.button.addEventListener("click", () => this.exportCurrent());
+    this.button.addEventListener("click", () => AIExporter.panel.open());
     document.body.appendChild(this.button);
   },
 
@@ -90,6 +89,15 @@ AIExporter.sidebar = {
     this.currentConversationId = id;
 
     if (!this.button) this.createButton();
+
+    const colors = {
+      chatgpt: "#10a37f",
+      claude: "#d97757",
+      gemini: "#1a73e8",
+    };
+    const color = colors[AIExporter.platform?.id] || colors.chatgpt;
+    this.button.style.background = color;
+    this.button.style.boxShadow = `0 4px 20px ${color}66`;
 
     if (id) {
       this.button.style.display = "flex";

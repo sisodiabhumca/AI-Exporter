@@ -1,17 +1,31 @@
 {
   "manifest_version": 3,
-  "name": "AI Exporter — ChatGPT",
-  "version": "1.2.0",
-  "description": "Export ChatGPT conversations (Enterprise/Team) to Claude, Gemini & other AI tools. By Gaurav Sisodia.",
+  "name": "AI Exporter",
+  "version": "1.5.0",
+  "description": "Export ChatGPT, Claude & Gemini chats — selective export, RAG JSONL, PDF, Notion, Obsidian. 100% local.",
   "permissions": ["activeTab", "storage"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "host_permissions": [
     "https://chatgpt.com/*",
-    "https://chat.openai.com/*"
+    "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*"
   ],
   "browser_specific_settings": {
     "gecko": {
       "id": "ai-exporter@chatgpt-export.local",
       "strict_min_version": "109.0"
+    }
+  },
+  "commands": {
+    "export-current": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
+      "description": "Open AI Exporter panel for current chat"
     }
   },
   "action": {
@@ -31,17 +45,32 @@
     {
       "matches": [
         "https://chatgpt.com/*",
-        "https://chat.openai.com/*"
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*"
       ],
       "js": [
         "lib/browser.js",
         "lib/utils.js",
         "lib/zip.js",
+        "lib/compliance.js",
+        "lib/batchexecute.js",
+        "lib/rag.js",
+        "lib/part-renderer.js",
         "lib/parser.js",
-        "lib/formats.js",
+        "lib/parser-claude.js",
+        "lib/parser-gemini.js",
+        "lib/clipboard.js",
+        "lib/print.js",
+        "lib/prefs.js",
         "lib/api.js",
+        "lib/api-claude.js",
+        "lib/api-gemini.js",
+        "lib/platform.js",
+        "lib/formats.js",
         "lib/exporter.js",
         "content/content.js",
+        "content/panel.js",
         "content/sidebar.js"
       ],
       "run_at": "document_idle"

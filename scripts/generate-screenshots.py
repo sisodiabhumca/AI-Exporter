@@ -130,22 +130,66 @@ def shot_progress():
 
 
 def shot_formats():
-    img, draw = base_canvas("Export Formats", "One ZIP with everything you need for Claude, Gemini & more")
+    img, draw = base_canvas("Export Formats", "One ZIP with everything you need for Claude, Gemini, Notion & more")
     folders = [
         ("universal/", "conversations.json", "Any AI tool"),
+        ("notion/", "*.md", "Notion pages"),
+        ("obsidian/", "*.md", "Obsidian vault"),
         ("claude-project/", "knowledge/*.md", "Claude Projects"),
         ("gemini-import/", "paste-ready/*.txt", "Google Gemini"),
-        ("markdown/", "*.md", "Copy-paste"),
-        ("raw/", "*.json", "Full ChatGPT data"),
+        ("html-bundle/", "index.html", "Offline reader"),
+        ("csv/", "*.csv", "Spreadsheets"),
+        ("compliance/", "manifest.json", "SHA-256 audit"),
     ]
-    y = 170
+    y = 150
     for folder, files, desc in folders:
-        rounded_rect(draw, (80, y, 1180, y + 90), WHITE, outline=BORDER)
-        draw.text((110, y + 18), folder, fill=GREEN_DARK, font=font(20, True))
-        draw.text((110, y + 48), files, fill=TEXT, font=font(16))
-        draw.text((900, y + 32), desc, fill=MUTED, font=font(18))
-        y += 105
+        rounded_rect(draw, (80, y, 1180, y + 72), WHITE, outline=BORDER)
+        draw.text((110, y + 14), folder, fill=GREEN_DARK, font=font(18, True))
+        draw.text((110, y + 40), files, fill=TEXT, font=font(14))
+        draw.text((900, y + 26), desc, fill=MUTED, font=font(16))
+        y += 82
     save(img, "04-export-formats.png")
+
+
+def shot_panel():
+    img, draw = base_canvas("Selective Export Panel", "Pick messages, formats, and export — all from the chat page")
+    # Chat background
+    rounded_rect(draw, (60, 150, 700, 720), WHITE, outline=BORDER)
+    draw.text((90, 180), "ChatGPT conversation", fill=MUTED, font=font(14))
+    for i, (role, text) in enumerate([
+        ("You", "How do I export only part of this chat?"),
+        ("Assistant", "Use the export panel to select specific messages..."),
+        ("You", "Can I get Notion format too?"),
+        ("Assistant", "Yes — check Notion in the format picker."),
+    ]):
+        y = 230 + i * 90
+        draw.text((90, y), role, fill=GREEN_DARK if role == "Assistant" else MUTED, font=font(12, True))
+        rounded_rect(draw, (90, y + 20, 660, y + 70), (244, 244, 244) if role == "Assistant" else (248, 252, 250))
+        draw.text((110, y + 32), text, fill=TEXT, font=font(15))
+
+    # Panel
+    rounded_rect(draw, (720, 150, 1220, 720), WHITE, outline=BORDER)
+    draw.rectangle((720, 150, 1220, 210), fill=GREEN)
+    draw.text((740, 168), "AI Exporter", fill=WHITE, font=font(20, True))
+
+    draw.text((740, 230), "☑ All messages selected", fill=MUTED, font=font(12))
+    y = 260
+    for label in ["Markdown", "CSV", "Notion", "Obsidian", "Claude"]:
+        draw.text((740, y), f"☑ {label}", fill=TEXT, font=font(13))
+        y += 26
+
+    y += 10
+    for i in range(3):
+        rounded_rect(draw, (740, y, 1200, y + 50), (232, 245, 240) if i == 1 else WHITE, outline=BORDER)
+        draw.text((760, y + 8), "You" if i % 2 == 0 else "Assistant", fill=GREEN_DARK, font=font(11, True))
+        draw.text((760, y + 26), "Message preview text...", fill=MUTED, font=font(12))
+        y += 58
+
+    rounded_rect(draw, (740, 660, 960, 700), GREEN, radius=8)
+    draw.text((770, 672), "↓ Download ZIP", fill=WHITE, font=font(13, True))
+    rounded_rect(draw, (980, 660, 1200, 700), WHITE, outline=BORDER, radius=8)
+    draw.text((1010, 672), "Copy Notion", fill=TEXT, font=font(13))
+    save(img, "07-export-panel.png")
 
 
 def shot_claude():
@@ -211,6 +255,7 @@ def main():
     shot_floating_button()
     shot_progress()
     shot_formats()
+    shot_panel()
     shot_claude()
     shot_gemini()
     print(f"\nDone — {len(list(OUT.glob('*.png')))} images in {OUT}")
