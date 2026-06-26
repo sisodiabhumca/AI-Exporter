@@ -1,4 +1,4 @@
-Export conversations from **ChatGPT**, **Claude**, **Gemini**, **Copilot**, **DeepSeek**, and **Grok** — including Enterprise/Team ChatGPT accounts — to formats ready for Notion, Obsidian, RAG pipelines, and cross-AI migration.
+Save and archive your AI conversation history on your own computer. AI Exporter downloads chats from the sites you already use—including workspace and business accounts where built-in export may be limited—and packages them into portable files for note apps, archives, RAG workflows, and migration.
 
 **No API keys. No cloud upload. Everything runs locally in your browser.**
 
@@ -6,20 +6,19 @@ Export conversations from **ChatGPT**, **Claude**, **Gemini**, **Copilot**, **De
 
 ## Why AI Exporter?
 
-OpenAI's built-in export is unavailable on many Team/Business plans. AI Exporter uses your existing ChatGPT session to download every conversation directly to your computer — in formats designed for import into other AI products and knowledge bases.
+Built-in export is unavailable or limited on many team and business plans. AI Exporter uses your existing sign-in session to download conversations directly to your device, in formats designed for knowledge bases and cross-tool workflows.
 
 ---
 
 ## Features
 
-✅ **6 platforms** — ChatGPT, Claude, Gemini, Copilot, DeepSeek, Grok  
-✅ **Enterprise / Team / Business** — auto-detects ChatGPT workspace accounts  
+✅ **Multiple chat sites** — works with popular AI chat websites ([full list in User Guide](https://github.com/sisodiabhumca/ai-exporter/blob/main/docs/USER_GUIDE.md))  
+✅ **Workspace accounts** — supports team and business logins where applicable  
 ✅ **Export all conversations** — full pagination, even thousands of chats  
 ✅ **Selective message export** — in-chat panel with checkboxes and Shift+click ranges  
-✅ **Multiple formats in one ZIP** — JSON, Markdown, CSV, Notion, Obsidian, Claude, Gemini  
-✅ **Claude Project ready** — upload knowledge files directly to claude.ai  
-✅ **Gemini paste-ready** — copy-paste files for gemini.google.com  
-✅ **Notion & Obsidian** — optimized markdown for your knowledge base  
+✅ **Multiple formats in one ZIP** — JSON, Markdown, CSV, Notion, Obsidian, and import-ready packages  
+✅ **Knowledge-base ready** — optimized output for Notion and Obsidian  
+✅ **Import helpers** — prepare upload packages for other assistants via included CLI tools  
 ✅ **HTML bundle** — browse all exports in one offline HTML reader  
 ✅ **Local PDF** — print-ready HTML, Save as PDF with no server  
 ✅ **RAG JSONL** — embedding-ready chunks (turn-pair, message, or semantic strategy)  
@@ -44,11 +43,10 @@ OpenAI's built-in export is unavailable on many Team/Business plans. AI Exporter
 | Notion | Paste into Notion pages |
 | Obsidian | Obsidian vault with YAML frontmatter |
 | HTML Bundle | Offline multi-chat browser |
-| Claude Project | Upload to claude.ai Projects |
-| Claude JSON | Claude API / Claude Code |
-| Gemini Import | gemini.google.com + Gemini API |
+| Project import package | Upload to assistant project/knowledge areas |
+| API JSON variants | Compatible JSON for common assistant APIs |
 | OpenAI JSON | OpenAI API format |
-| Raw JSON | Full ChatGPT metadata |
+| Raw JSON | Full platform metadata |
 | RAG JSONL | LangChain, LlamaIndex, embedding pipelines |
 | Compliance manifest | SHA-256 audit trail v2 (optional) |
 
@@ -57,7 +55,7 @@ OpenAI's built-in export is unavailable on many Team/Business plans. AI Exporter
 ## How to use
 
 1. Install the extension
-2. Go to chatgpt.com and sign in
+2. Open a supported AI chat site and sign in
 3. Click the AI Exporter icon
 4. Choose formats and click **Export conversations**
 5. A ZIP downloads to your computer
@@ -68,14 +66,7 @@ OpenAI's built-in export is unavailable on many Team/Business plans. AI Exporter
 
 ## Import helpers
 
-Included command-line tools prepare import packages:
-
-```bash
-node tools/prepare-claude-import.mjs your-export.zip
-node tools/prepare-gemini-import.mjs your-export.zip
-```
-
-See the [User Guide](https://github.com/sisodiabhumca/ai-exporter/blob/main/docs/USER_GUIDE.md) for screenshots and step-by-step instructions.
+Included command-line tools prepare import packages from your export ZIP. See the [User Guide](https://github.com/sisodiabhumca/ai-exporter/blob/main/docs/USER_GUIDE.md) for platform-specific commands and examples.
 
 ---
 

@@ -1,1 +1,1 @@
-Export ChatGPT, Claude, Gemini, Copilot, DeepSeek & Grok — JSON, Markdown, RAG JSONL, PDF. 100% local.
+Export AI chat history to your computer as JSON, Markdown, PDF, and knowledge-base files. Fully local.

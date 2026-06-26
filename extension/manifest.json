@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "AI Exporter",
   "version": "1.7.2",
-  "description": "Export ChatGPT, Claude, Gemini, Copilot, Grok & DeepSeek — RAG JSONL, selective export, 100% local.",
+  "description": "Export AI chat history to your computer as JSON, Markdown, PDF, and knowledge-base files. Fully local.",
   "permissions": ["activeTab", "storage", "alarms", "notifications"],
   "background": {
     "service_worker": "background.js"

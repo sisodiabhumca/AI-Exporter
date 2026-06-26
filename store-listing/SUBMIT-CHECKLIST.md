@@ -37,8 +37,10 @@ You cannot publish until this email is verified.
 
 ### Short description (copy-paste)
 
+> **Policy note:** Do not list multiple AI brand names in the summary or description ([keyword spam FAQ](https://developer.chrome.com/webstore/spam-faq#keyword-spam)). The **Summary** must match `manifest.json` `description` — Chrome shows it above the long description.
+
 ```
-Export ChatGPT, Claude, Gemini, Copilot, DeepSeek & Grok — JSON, Markdown, RAG JSONL, PDF. 100% local.
+Export AI chat history to your computer as JSON, Markdown, PDF, and knowledge-base files. Fully local.
 ```
 
 ### Icon
@@ -197,7 +199,7 @@ You do **not** need to create a new listing item for version updates.
 Click **Save Draft**, fix any warnings at the top of the page, then **Submit for review** when:
 
 - [ ] Contact email `sisodiabhumca@gmail.com` entered and **verified**
-- [ ] Title, summary, and description updated (6 platforms)
+- [ ] Title, summary, and description updated (no platform keyword lists — see `description.md`)
 - [ ] Single purpose description entered
 - [ ] activeTab justification entered
 - [ ] Host permission justification entered (all 7 domains)
@@ -213,6 +215,28 @@ Click **Save Draft**, fix any warnings at the top of the page, then **Submit for
 - [ ] Submit for review (only after warnings cleared)
 
 Typical review time: 1–3 business days (first submit); updates often faster.
+
+---
+
+## Resubmit after metadata rejection (Yellow Argon / keyword stuffing)
+
+**Violation ID:** Yellow Argon — [troubleshooting guide](https://developer.chrome.com/docs/webstore/troubleshooting/#keyword-stuffing)  
+**Policy:** [Spam & Placement](https://developer.chrome.com/webstore/program_policies#spam) · [Keyword spam FAQ](https://developer.chrome.com/webstore/spam-faq#keyword-spam)
+
+Google’s explicit example: *“a long list of the different sites on which the extension works.”* The [FAQ](https://developer.chrome.com/webstore/spam-faq#keyword-spam) adds:
+
+- Do **not** list more than **five** supported websites/brands in the **description**
+- For a longer list → link to docs or show it in a **screenshot**
+- Keep any single keyword under **5** uses; avoid unnatural repetition
+- Description should cover **extension functionality only** (not general industry info)
+
+**Resubmit steps:**
+
+1. **Store listing** → replace **Summary** and **Description** with `short-description.txt` and `description.md`.
+2. Optional: add supported-site names to screenshot `04-export-formats.png` or rely on the User Guide link in the description.
+3. Leave **Privacy practices** justifications as-is — host domains there are functional, not marketing metadata.
+4. **Package** → re-upload the same Chrome zip if code unchanged.
+5. **Save Draft** → **Submit for review**.
 
 ---
 
