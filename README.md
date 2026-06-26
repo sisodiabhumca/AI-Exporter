@@ -94,7 +94,7 @@ Six platforms, format picker, semantic RAG chunking, and scheduled export option
 
 | Floating export button | Selective export panel |
 |------------------------|------------------------|
-| ![Floating export button on any AI chat page](store-listing/screenshots/02-floating-export-button.png) | ![Selective export panel with format picker](store-listing/screenshots/07-export-panel.png) |
+| ![Floating export button on any AI chat page](store-listing/screenshots/02-floating-export-button.png) | ![Selective export panel with format picker](store-listing/screenshots/05-export-panel.png) |
 | One-click export on any supported platform | Pick messages, formats, copy or download ZIP |
 
 ### Export progress & output
@@ -108,7 +108,7 @@ Six platforms, format picker, semantic RAG chunking, and scheduled export option
 
 | Import to Claude | Import to Gemini |
 |------------------|------------------|
-| ![Claude Project import package](store-listing/screenshots/05-claude-import.png) | ![Gemini paste-ready import files](store-listing/screenshots/06-gemini-import.png) |
+| ![Claude Project import package](store-listing/screenshots/docs/claude-import.png) | ![Gemini paste-ready import files](store-listing/screenshots/docs/gemini-import.png) |
 | Upload knowledge files to Claude Projects | Paste-ready context for gemini.google.com |
 
 [Full user guide with step-by-step instructions →](docs/USER_GUIDE.md)

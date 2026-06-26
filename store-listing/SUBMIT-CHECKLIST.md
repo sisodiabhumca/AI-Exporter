@@ -33,7 +33,22 @@ You cannot publish until this email is verified.
 | **Title** | `AI Exporter` |
 | **Summary** (132 chars max) | Copy from below or `short-description.txt` |
 | **Description** | Copy from `description.md` |
-| **Category** | `Productivity` |
+
+### Category (two-level dropdown)
+
+Chrome Web Store uses a **group** plus a **subcategory** ([17 categories in 3 groups](https://groups.google.com/a/chromium.org/g/chromium-extensions/c/YS-HD7Ta3EQ)):
+
+| Group | Subcategory | Use for AI Exporter? |
+|-------|-------------|----------------------|
+| **Productivity** | **Workflow** | **Yes — recommended** (export, archive, migrate chat data) |
+| Productivity | Tools | OK alternative (general utility) |
+| Productivity | Developer | Only if you position it mainly for dev/RAG pipelines |
+| Productivity | Education | No |
+| Productivity | Communication | No |
+| Lifestyle | *(various)* | No |
+| Make Chrome Yours | *(Functionality, Privacy, Accessibility)* | No |
+
+**Select:** `Productivity` → `Workflow`
 
 ### Short description (copy-paste)
 
@@ -47,15 +62,41 @@ Export AI chat history to your computer as JSON, Markdown, PDF, and knowledge-ba
 
 Upload: `store-listing/icon-128.png` (128×128 PNG)
 
-### Screenshots (upload 7, 1280×800)
+### Small promo tile (440×280)
+
+Chrome requires **JPEG or 24-bit PNG (no alpha)** on a **440×280** canvas.
+
+Upload **one** of:
+
+| File | Format |
+|------|--------|
+| `store-listing/promo/small-tile-440x280.png` | 24-bit RGB PNG (recommended) |
+| `store-listing/promo/small-tile-440x280.jpg` | JPEG |
+
+Regenerate: `python3 scripts/generate-screenshots.py`
+
+### Marquee promo tile (1400×560)
+
+Chrome requires **JPEG or 24-bit PNG (no alpha)** on a **1400×560** canvas.
+
+Upload **one** of:
+
+| File | Format |
+|------|--------|
+| `store-listing/promo/marquee-tile-1400x560.png` | 24-bit RGB PNG (recommended) |
+| `store-listing/promo/marquee-tile-1400x560.jpg` | JPEG |
+
+### Screenshots (upload exactly 5, each 1280×800)
+
+Chrome Web Store allows **maximum 5** screenshots. Upload in this order:
 
 1. `store-listing/screenshots/01-extension-popup.png`
 2. `store-listing/screenshots/02-floating-export-button.png`
 3. `store-listing/screenshots/03-export-progress.png`
 4. `store-listing/screenshots/04-export-formats.png`
-5. `store-listing/screenshots/05-claude-import.png`
-6. `store-listing/screenshots/06-gemini-import.png`
-7. `store-listing/screenshots/07-export-panel.png`
+5. `store-listing/screenshots/05-export-panel.png`
+
+> Supported-site names belong in screenshot **#1** (not the text description). Extra images for README/docs live in `store-listing/screenshots/docs/` — do **not** upload those to Chrome.
 
 ### Optional URLs
 
@@ -174,9 +215,9 @@ Upload: `dist/ai-exporter-chrome-v1.7.2.zip`
 Regenerate assets if needed:
 
 ```bash
+python3 -m venv .venv && .venv/bin/pip install pillow
+.venv/bin/python scripts/generate-screenshots.py
 bash scripts/package-extension.sh
-# Screenshots (optional refresh):
-# python3 scripts/generate-screenshots.py  # requires Pillow
 ```
 
 ---
@@ -210,7 +251,7 @@ Click **Save Draft**, fix any warnings at the top of the page, then **Submit for
 - [ ] Data usage compliance certified (**Yes**)
 - [ ] Privacy policy URL live on GitHub
 - [ ] Chrome ZIP uploaded (`dist/ai-exporter-chrome-v1.7.2.zip`)
-- [ ] Icon + 7 screenshots uploaded
+- [ ] Icon + **small promo tile** (440×280) + **marquee promo tile** (1400×560) + **5** screenshots uploaded
 - [ ] **Save Draft** clicked
 - [ ] Submit for review (only after warnings cleared)
 

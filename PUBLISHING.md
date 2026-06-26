@@ -5,14 +5,19 @@
 ## 1. Generate assets
 
 ```bash
-pip install pillow          # if not installed
-python3 scripts/generate-screenshots.py
+python3 -m venv .venv && .venv/bin/pip install pillow
+.venv/bin/python scripts/generate-screenshots.py
 bash scripts/package-extension.sh
 ```
 
 Outputs:
-- `store-listing/screenshots/*.png` — Chrome Web Store images (1280×800)
-- `dist/ai-exporter-chrome-v1.5.0.zip` — upload package
+- `store-listing/screenshots/01–05-*.png` — Chrome Web Store screenshots (1280×800, **max 5**)
+- `store-listing/promo/small-tile-440x280.png` — Small promo tile (440×280 RGB PNG)
+- `store-listing/promo/small-tile-440x280.jpg` — Small promo tile (JPEG alternative)
+- `store-listing/promo/marquee-tile-1400x560.png` — Marquee promo tile (1400×560 RGB PNG)
+- `store-listing/promo/marquee-tile-1400x560.jpg` — Marquee promo tile (JPEG alternative)
+- `store-listing/screenshots/docs/` — Extra images for README/docs only
+- `dist/ai-exporter-chrome-v*.zip` — upload package
 
 ## 2. Publish to Chrome Web Store
 
@@ -23,18 +28,14 @@ Outputs:
    - **Detailed description:** `store-listing/description.md`
    - **Category:** Productivity
    - **Language:** English
-4. Upload screenshots from `store-listing/screenshots/`:
-   - `01-extension-popup.png`
-   - `02-floating-export-button.png`
-   - `03-export-progress.png`
-   - `04-export-formats.png`
-   - `05-claude-import.png`
-   - `06-gemini-import.png`
-   - `07-export-panel.png`
+4. Upload store images:
+   - **Small promo tile:** `store-listing/promo/small-tile-440x280.png` (440×280)
+   - **Marquee promo tile:** `store-listing/promo/marquee-tile-1400x560.png` (1400×560)
+   - **Screenshots (5 max):** `01-extension-popup.png` through `05-export-panel.png`
 5. **Store icon:** upload `store-listing/icon-128.png` (128×128 PNG, also included in the ZIP via `extension/icons/icon128.png`)
 6. **Privacy policy URL:** `https://github.com/sisodiabhumca/ai-exporter/blob/main/store-listing/privacy-policy.md`
-6. **Permissions justification:** See privacy policy — only accesses chatgpt.com with user's session
-7. Submit for review (typically 1–3 business days)
+7. **Permissions justification:** See privacy policy — only accesses chatgpt.com with user's session
+8. Submit for review (typically 1–3 business days)
 
 ## 3. Publish to Firefox Add-ons
 
@@ -69,7 +70,9 @@ gh repo create sisodiabhumca/ai-exporter --public --source=. --push
 
 | Asset | Path |
 |-------|------|
-| Screenshots | `store-listing/screenshots/` |
+| Screenshots (Chrome, max 5) | `store-listing/screenshots/01–05-*.png` |
+| Small promo tile (440×280) | `store-listing/promo/small-tile-440x280.png` |
+| Marquee promo tile (1400×560) | `store-listing/promo/marquee-tile-1400x560.png` |
 | **Store icon (128×128)** | `store-listing/icon-128.png` |
 | Short description | `store-listing/short-description.txt` |
 | Full description | `store-listing/description.md` |

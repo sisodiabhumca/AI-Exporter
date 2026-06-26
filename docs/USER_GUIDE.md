@@ -53,7 +53,7 @@ Each export includes `IMPORT_GUIDE.md` with detailed instructions.
 
 ## Import into Claude
 
-![Claude import](../store-listing/screenshots/05-claude-import.png)
+![Claude import](../store-listing/screenshots/docs/claude-import.png)
 
 ### Option A — Claude Projects (recommended)
 
@@ -89,7 +89,7 @@ Creates `claude-import/` with:
 
 ## Import into Gemini
 
-![Gemini import](../store-listing/screenshots/06-gemini-import.png)
+![Gemini import](../store-listing/screenshots/docs/gemini-import.png)
 
 Enable **Gemini JSON** or **Gemini Import (paste-ready)** in the export popup (both are on by default). Your ZIP will include:
 
