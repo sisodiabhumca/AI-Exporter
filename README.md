@@ -10,7 +10,15 @@ Everything runs locally in your browser. Your chats never leave your machine.
 
 ![Extension popup — six platforms, formats, and scheduled exports](store-listing/screenshots/01-extension-popup.png)
 
-**Version 1.7.0** — Copilot, DeepSeek, Grok, semantic RAG, merge CLI, scheduled exports.
+**Version 1.7.2** — Firefox AMO build, export panel fixes, Chrome Web Store listing updates.
+
+## What's new in v1.7.2
+
+- **Firefox AMO package** — separate zip with `background.scripts` only (no service worker)
+- **Export panel fixes** — message loading, DOM-safe UI, ChatGPT branch traversal + DOM fallback
+- **Gemini import folders** — `paste-ready/` and `context-prompts/` generated when Gemini formats are selected
+- **Chrome Web Store assets** — 5 screenshots, 440×280 small promo tile, 1400×560 marquee tile
+- **Listing copy** — de-keyworded store description aligned with Chrome spam policy
 
 ## What's new in v1.7.0
 
@@ -142,7 +150,7 @@ Six platforms, format picker, semantic RAG chunking, and scheduled export option
 3. Click **Load unpacked** → select the `extension/` folder
 4. Pin **AI Exporter** to your toolbar
 
-Or install from Chrome Web Store (once published) — see [PUBLISHING.md](PUBLISHING.md).
+Or install from the [Chrome Web Store](https://chrome.google.com/webstore) (once published) — see [PUBLISHING.md](PUBLISHING.md) and [store submit checklist](store-listing/SUBMIT-CHECKLIST.md).
 
 ### Firefox
 
