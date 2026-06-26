@@ -51,7 +51,7 @@ ext.alarms?.onAlarm.addListener(async (alarm) => {
   if (ext.notifications) {
     ext.notifications.create({
       type: "basic",
-      iconUrl: "icons/icon128.png",
+      iconUrl: ext.runtime.getURL("icons/icon128.png"),
       title: "AI Exporter — scheduled export",
       message: `Open ${schedule.platform || "your AI chat"} to run the scheduled export.`,
     });

@@ -3,15 +3,29 @@ var AIExporter = AIExporter || {};
 
 AIExporter.print = {
   openPrintView(html, title) {
-    const win = window.open("", "_blank", "width=900,height=700");
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank", "width=900,height=700");
     if (!win) {
+      URL.revokeObjectURL(url);
       throw new Error("Pop-up blocked. Allow pop-ups to print/save as PDF.");
     }
-    win.document.write(html);
-    win.document.close();
-    win.document.title = title || "AI Exporter";
-    win.onload = () => {
-      setTimeout(() => win.print(), 300);
-    };
+
+    const cleanup = () => URL.revokeObjectURL(url);
+    win.addEventListener(
+      "load",
+      () => {
+        try {
+          win.document.title = title || "AI Exporter";
+        } catch {
+          // cross-origin guard if blob URL behaves differently
+        }
+        setTimeout(() => {
+          win.print();
+          cleanup();
+        }, 300);
+      },
+      { once: true }
+    );
   },
 };

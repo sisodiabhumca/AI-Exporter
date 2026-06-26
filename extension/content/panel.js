@@ -133,6 +133,151 @@ AIExporter.panel = {
     document.head.appendChild(style);
   },
 
+  setListPlaceholder(message) {
+    if (!this.listEl) return;
+    this.listEl.replaceChildren();
+    const div = document.createElement("div");
+    div.className = "aie-panel-loading";
+    div.textContent = message;
+    this.listEl.appendChild(div);
+  },
+
+  buildPanelShell() {
+    const el = document.createElement("aside");
+    el.id = "ai-exporter-panel";
+
+    const header = document.createElement("div");
+    header.className = "aie-panel-header";
+
+    const headerLeft = document.createElement("div");
+    headerLeft.style.display = "flex";
+    headerLeft.style.alignItems = "center";
+
+    const title = document.createElement("h2");
+    title.textContent = "AI Exporter";
+
+    const badge = document.createElement("span");
+    badge.className = "aie-panel-badge";
+    badge.id = "aie-group-badge";
+    badge.style.display = "none";
+    badge.textContent = "Group";
+
+    headerLeft.appendChild(title);
+    headerLeft.appendChild(badge);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "aie-panel-close";
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.textContent = "×";
+
+    header.appendChild(headerLeft);
+    header.appendChild(closeBtn);
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "aie-panel-toolbar";
+
+    const allBtn = document.createElement("button");
+    allBtn.type = "button";
+    allBtn.dataset.action = "select-all";
+    allBtn.textContent = "All";
+
+    const noneBtn = document.createElement("button");
+    noneBtn.type = "button";
+    noneBtn.dataset.action = "select-none";
+    noneBtn.textContent = "None";
+
+    const shiftHint = document.createElement("span");
+    shiftHint.className = "aie-hint";
+    shiftHint.style.padding = "0";
+    shiftHint.style.margin = "0";
+    shiftHint.textContent = "Shift+click range";
+
+    toolbar.appendChild(allBtn);
+    toolbar.appendChild(noneBtn);
+    toolbar.appendChild(shiftHint);
+
+    const formatsDetails = document.createElement("details");
+    formatsDetails.className = "aie-panel-formats";
+    formatsDetails.open = true;
+
+    const formatsSummary = document.createElement("summary");
+    formatsSummary.textContent = "Export formats";
+
+    const formatGrid = document.createElement("div");
+    formatGrid.className = "aie-format-grid";
+    for (const f of AIExporter.prefs.PANEL_FORMATS) {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = "panel-format";
+      input.value = f.id;
+      input.checked = this.panelFormats.includes(f.id);
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(` ${f.label}`));
+      formatGrid.appendChild(label);
+    }
+
+    formatsDetails.appendChild(formatsSummary);
+    formatsDetails.appendChild(formatGrid);
+
+    const hint = document.createElement("p");
+    hint.className = "aie-hint";
+    hint.textContent = "Select messages to export. All checked = full chat.";
+
+    const listEl = document.createElement("div");
+    listEl.className = "aie-panel-messages";
+    listEl.id = "aie-message-list";
+
+    const footer = document.createElement("div");
+    footer.className = "aie-panel-footer";
+
+    const row1 = document.createElement("div");
+    row1.className = "row";
+    const downloadBtn = document.createElement("button");
+    downloadBtn.type = "button";
+    downloadBtn.className = "primary";
+    downloadBtn.dataset.action = "download";
+    downloadBtn.textContent = "↓ Download ZIP";
+    const printBtn = document.createElement("button");
+    printBtn.type = "button";
+    printBtn.dataset.action = "print-pdf";
+    printBtn.textContent = "Print / PDF";
+    row1.appendChild(downloadBtn);
+    row1.appendChild(printBtn);
+
+    const row2 = document.createElement("div");
+    row2.className = "row";
+    for (const [action, label] of [
+      ["copy-md", "Copy Markdown"],
+      ["copy-json", "Copy JSON"],
+      ["copy-notion", "Copy Notion"],
+    ]) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.action = action;
+      btn.textContent = label;
+      row2.appendChild(btn);
+    }
+
+    const statusEl = document.createElement("p");
+    statusEl.className = "aie-panel-status";
+    statusEl.id = "aie-panel-status";
+
+    footer.appendChild(row1);
+    footer.appendChild(row2);
+    footer.appendChild(statusEl);
+
+    el.appendChild(header);
+    el.appendChild(toolbar);
+    el.appendChild(formatsDetails);
+    el.appendChild(hint);
+    el.appendChild(listEl);
+    el.appendChild(footer);
+
+    return el;
+  },
+
   async create() {
     if (this.el) return;
 
@@ -140,49 +285,11 @@ AIExporter.panel = {
     const prefs = await AIExporter.prefs.get();
     this.panelFormats = prefs.formats || AIExporter.prefs.DEFAULTS.formats;
 
-    const formatChecks = AIExporter.prefs.PANEL_FORMATS.map(
-      (f) =>
-        `<label><input type="checkbox" name="panel-format" value="${f.id}" ${this.panelFormats.includes(f.id) ? "checked" : ""}/> ${f.label}</label>`
-    ).join("");
-
     this.backdrop = document.createElement("div");
     this.backdrop.id = "ai-exporter-panel-backdrop";
     this.backdrop.addEventListener("click", () => this.close());
 
-    this.el = document.createElement("aside");
-    this.el.id = "ai-exporter-panel";
-    this.el.innerHTML = `
-      <div class="aie-panel-header">
-        <div style="display:flex;align-items:center">
-          <h2>AI Exporter</h2>
-          <span class="aie-panel-badge" id="aie-group-badge" style="display:none">Group</span>
-        </div>
-        <button class="aie-panel-close" type="button" aria-label="Close">×</button>
-      </div>
-      <div class="aie-panel-toolbar">
-        <button type="button" data-action="select-all">All</button>
-        <button type="button" data-action="select-none">None</button>
-        <span class="aie-hint" style="padding:0;margin:0">Shift+click range</span>
-      </div>
-      <details class="aie-panel-formats" open>
-        <summary>Export formats</summary>
-        <div class="aie-format-grid">${formatChecks}</div>
-      </details>
-      <p class="aie-hint">Select messages to export. All checked = full chat.</p>
-      <div class="aie-panel-messages" id="aie-message-list"></div>
-      <div class="aie-panel-footer">
-        <div class="row">
-          <button type="button" class="primary" data-action="download">↓ Download ZIP</button>
-          <button type="button" data-action="print-pdf">Print / PDF</button>
-        </div>
-        <div class="row">
-          <button type="button" data-action="copy-md">Copy Markdown</button>
-          <button type="button" data-action="copy-json">Copy JSON</button>
-          <button type="button" data-action="copy-notion">Copy Notion</button>
-        </div>
-        <p class="aie-panel-status" id="aie-panel-status"></p>
-      </div>
-    `;
+    this.el = this.buildPanelShell();
 
     document.body.appendChild(this.backdrop);
     document.body.appendChild(this.el);
@@ -229,7 +336,7 @@ AIExporter.panel = {
 
     this.backdrop.classList.add("open");
     this.el.classList.add("open");
-    this.listEl.innerHTML = `<div class="aie-panel-loading">Loading conversation…</div>`;
+    this.setListPlaceholder("Loading conversation…");
     this.setStatus("");
 
     try {
@@ -272,7 +379,7 @@ AIExporter.panel = {
       this.renderList();
       this.setStatus(`${this.messages.length} messages · ${this.selected.size} selected`);
     } catch (err) {
-      this.listEl.innerHTML = `<div class="aie-panel-loading">Failed: ${err.message}</div>`;
+      this.setListPlaceholder(`Failed: ${err.message}`);
     }
   },
 
@@ -283,32 +390,47 @@ AIExporter.panel = {
 
   renderList() {
     if (!this.messages.length) {
-      this.listEl.innerHTML = `<div class="aie-panel-loading">No messages found.</div>`;
+      this.setListPlaceholder("No messages found.");
       return;
     }
 
-    this.listEl.innerHTML = this.messages
-      .map((msg, index) => {
-        const preview = (msg.content || "[media]")
-          .replace(/[#*`>]/g, "")
-          .replace(/\s+/g, " ")
-          .slice(0, 100);
-        const checked = this.selected.has(msg.id) ? "checked" : "";
-        const sel = this.selected.has(msg.id) ? "selected" : "";
-        const roleClass = msg.role === "user" ? "user" : "";
-        const roleLabel = AIExporter.utils.getSpeakerLabel(msg);
-        return `<label class="aie-msg-row ${sel}" data-index="${index}">
-          <input type="checkbox" ${checked} data-id="${msg.id}" data-index="${index}"/>
-          <div class="aie-msg-preview">
-            <div class="aie-msg-role ${roleClass}">${AIExporter.utils.escapeHtml(roleLabel)}</div>
-            <div class="aie-msg-text">${AIExporter.utils.escapeHtml(preview)}</div>
-          </div>
-        </label>`;
-      })
-      .join("");
+    this.listEl.replaceChildren();
 
-    this.listEl.querySelectorAll("input[type=checkbox]").forEach((cb) => {
-      cb.addEventListener("click", (e) => this.onCheckboxClick(e, cb));
+    this.messages.forEach((msg, index) => {
+      const preview = (msg.content || "[media]")
+        .replace(/[#*`>]/g, "")
+        .replace(/\s+/g, " ")
+        .slice(0, 100);
+      const roleClass = msg.role === "user" ? "user" : "";
+      const roleLabel = AIExporter.utils.getSpeakerLabel(msg);
+
+      const row = document.createElement("label");
+      row.className = `aie-msg-row${this.selected.has(msg.id) ? " selected" : ""}`;
+      row.dataset.index = String(index);
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = this.selected.has(msg.id);
+      checkbox.dataset.id = msg.id;
+      checkbox.dataset.index = String(index);
+      checkbox.addEventListener("click", (e) => this.onCheckboxClick(e, checkbox));
+
+      const previewWrap = document.createElement("div");
+      previewWrap.className = "aie-msg-preview";
+
+      const roleEl = document.createElement("div");
+      roleEl.className = `aie-msg-role ${roleClass}`.trim();
+      roleEl.textContent = roleLabel;
+
+      const textEl = document.createElement("div");
+      textEl.className = "aie-msg-text";
+      textEl.textContent = preview;
+
+      previewWrap.appendChild(roleEl);
+      previewWrap.appendChild(textEl);
+      row.appendChild(checkbox);
+      row.appendChild(previewWrap);
+      this.listEl.appendChild(row);
     });
   },
 

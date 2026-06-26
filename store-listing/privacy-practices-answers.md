@@ -1,6 +1,6 @@
 # Chrome Web Store — Privacy Practices (copy-paste)
 
-**Extension:** AI Exporter v1.7.0  
+**Extension:** AI Exporter v1.7.2  
 **Author:** Gaurav Sisodia ([@sisodiabhumca](https://github.com/sisodiabhumca))  
 **Contact email:** sisodiabhumca@gmail.com
 
@@ -31,13 +31,17 @@ Host permissions are required because the extension must run on supported AI cha
 
 All requests go only to the supported platform domains (OpenAI, Anthropic, Google, Microsoft, DeepSeek, xAI). Conversation data is not sent to any server operated by the extension developer.
 
-### alarms and notifications
+### alarms
 
-These permissions support the **optional** scheduled export feature. When enabled by the user, the extension sets a recurring alarm to remind the extension to export on a schedule. A local notification is shown only if no supported platform tab is open at export time. No data is sent externally.
+The `alarms` permission supports the **optional** scheduled export feature. When the user enables recurring export in the extension popup, the extension schedules a local alarm (daily, weekly, or monthly) to trigger an export at the chosen interval. The alarm runs only in the user’s browser; no data is sent to the extension developer or any third party.
+
+### notifications
+
+The `notifications` permission is used **only** when a scheduled export cannot run because no supported AI chat tab is open. In that case, the extension shows a single local notification reminding the user to open ChatGPT, Claude, Gemini, or another supported site so the export can proceed. Notifications are not used for marketing or analytics. No conversation data is included in notifications.
 
 ### storage
 
-The `storage` permission is used to save small pieces of local metadata on the user’s device: the timestamp of the last successful export (for “New since last export”) and the user’s export preferences (selected formats, filename pattern, and options). No conversation content, tokens, or personal data are stored in extension storage.
+The `storage` permission is used to save small pieces of local metadata on the user’s device: the timestamp of the last successful export (for “New since last export”), export preferences (selected formats, filename pattern, and options), and optional scheduled-export settings (enabled flag and interval). No conversation content, tokens, or personal data are stored in extension storage.
 
 ### Remote code
 
@@ -49,7 +53,7 @@ If the form asks whether you use remote code, select **No**.
 
 If a free-text justification is still required, use:
 
-> This extension does not use remote code. All functionality is implemented in files included in the extension package. Network requests are made only to chatgpt.com to retrieve the signed-in user’s own conversation data via OpenAI’s APIs; no remotely hosted scripts are loaded or executed.
+> This extension does not use remote code. All functionality is implemented in files included in the extension package. Network requests are made only to supported AI platform domains to retrieve the signed-in user's own conversation data; no remotely hosted scripts are loaded or executed.
 
 ---
 
@@ -69,7 +73,7 @@ When certifying compliance with the [Developer Program Policies](https://develop
 **Privacy policy URL** (host on GitHub after you push the repo):
 
 ```
-https://github.com/sisodiabhumca/ai-exporter/blob/main/store-listing/privacy-policy.md
+https://github.com/sisodiabhumca/AI-Exporter/blob/main/store-listing/privacy-policy.md
 ```
 
 **Data handling questionnaire (typical answers):**
@@ -103,12 +107,13 @@ https://github.com/sisodiabhumca/ai-exporter/blob/main/store-listing/privacy-pol
 - [ ] Single purpose description entered
 - [ ] activeTab justification entered
 - [ ] Host permission justification entered
-- [ ] Remote code: **No** (or justification above if required)
+- [ ] **alarms** justification entered (Privacy practices tab)
+- [ ] **notifications** justification entered (Privacy practices tab)
 - [ ] storage justification entered
 - [ ] Data usage compliance certified (**Yes**)
 - [ ] Privacy policy URL added (GitHub repo must be public)
-- [ ] Extension ZIP uploaded (`dist/ai-exporter-chrome-v1.7.0.zip`)
+- [ ] Extension ZIP uploaded (`dist/ai-exporter-chrome-v1.7.2.zip`)
 - [ ] Store icon uploaded (`store-listing/icon-128.png`)
-- [ ] Screenshots uploaded (6 images)
+- [ ] Screenshots uploaded (7 images)
 - [ ] **Save Draft** clicked
 - [ ] Submit for review (only after all warnings cleared)

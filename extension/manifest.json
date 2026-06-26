@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Exporter",
-  "version": "1.7.0",
+  "version": "1.7.2",
   "description": "Export ChatGPT, Claude, Gemini, Copilot, Grok & DeepSeek — RAG JSONL, selective export, 100% local.",
   "permissions": ["activeTab", "storage", "alarms", "notifications"],
   "background": {
@@ -19,7 +19,16 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "ai-exporter@chatgpt-export.local",
-      "strict_min_version": "109.0"
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    },
+    "gecko_android": {
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "commands": {

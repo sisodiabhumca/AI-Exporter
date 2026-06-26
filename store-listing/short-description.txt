@@ -1,1 +1,1 @@
-Export ChatGPT, Claude & Gemini to JSON, Markdown, RAG JSONL, PDF. Selective export. Enterprise-ready. 100% local.
+Export ChatGPT, Claude, Gemini, Copilot, DeepSeek & Grok — JSON, Markdown, RAG JSONL, PDF. 100% local.
