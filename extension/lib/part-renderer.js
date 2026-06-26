@@ -83,7 +83,11 @@ AIExporter.partRenderer = {
 
   renderMessageContent(msg, options = {}) {
     const contentType = msg.content?.content_type || "text";
-    const parts = msg.content?.parts || [];
+    const parts = msg.content?.parts?.length
+      ? msg.content.parts
+      : typeof msg.content?.text === "string" && msg.content.text
+        ? [msg.content.text]
+        : [];
     const chunks = [];
 
     for (const part of parts) {

@@ -91,6 +91,17 @@ Creates `claude-import/` with:
 
 ![Gemini import](../store-listing/screenshots/06-gemini-import.png)
 
+Enable **Gemini JSON** or **Gemini Import (paste-ready)** in the export popup (both are on by default). Your ZIP will include:
+
+```
+gemini-import/
+├── paste-ready/          ← Option A
+├── context-prompts/      ← Option B
+├── api/                  ← Option C (per-chat + conversations.json)
+├── manifest.json
+└── GEMINI_SETUP.md
+```
+
 ### Option A — Copy-paste (easiest)
 
 1. Open any file in `gemini-import/paste-ready/`

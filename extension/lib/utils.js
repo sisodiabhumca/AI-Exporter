@@ -64,6 +64,16 @@ AIExporter.utils = {
     return msg.role.charAt(0).toUpperCase() + msg.role.slice(1);
   },
 
+  panelMessages(convo, options = {}) {
+    if (!convo?._panelMessages?.length) return null;
+    const selectedIds = options.selectedMessageIds?.length
+      ? new Set(options.selectedMessageIds)
+      : null;
+    return convo._panelMessages.filter(
+      (m) => !selectedIds || selectedIds.has(m.id)
+    );
+  },
+
   applyFilenameTemplate(template, vars) {
     const t = template || "{title}_{id}";
     return this.sanitizeFilename(

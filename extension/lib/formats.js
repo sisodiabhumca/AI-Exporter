@@ -475,6 +475,7 @@ AIExporter.formats = {
         return {
           title: summary.title,
           paste_file: `paste-ready/${baseName}_${id.slice(0, 8)}.txt`,
+          context_prompt_file: `context-prompts/${baseName}_${id.slice(0, 8)}.txt`,
           api_file: `api/${baseName}_${id.slice(0, 8)}.json`,
         };
       }),
@@ -734,6 +735,8 @@ Use files in \`claude/\` — each JSON has \`title\` and \`messages\` arrays.
 
 ## Google Gemini
 
+Requires **Gemini JSON** or **Gemini Import** format (both enabled by default).
+
 **Option A — Copy-paste (easiest)**
 1. Open any file in \`gemini-import/paste-ready/\`
 2. Copy and paste into a new chat at gemini.google.com
@@ -742,7 +745,9 @@ Use files in \`claude/\` — each JSON has \`title\` and \`messages\` arrays.
 Use files in \`gemini-import/context-prompts/\` for long conversations with framing instructions.
 
 **Option C — Gemini API**
-Use \`gemini-import/api/conversations.json\` with the Google AI SDK.
+Use \`gemini-import/api/conversations.json\` (combined) or per-chat files in \`gemini-import/api/\` with the Google AI SDK.
+
+**Fallback:** paste from \`markdown/\` if \`gemini-import/\` is not in your export.
 
 **Import helper:** \`node tools/prepare-gemini-import.mjs your-export.zip\`
 

@@ -88,4 +88,57 @@ AIExporter.domScraper = {
 
     return results;
   },
+
+  scrapeForPlatform(platformId) {
+    const configs = {
+      chatgpt: {
+        user: [
+          '[data-message-author-role="user"]',
+          '[data-testid="user-message"]',
+        ],
+        assistant: [
+          '[data-message-author-role="assistant"]',
+          '[data-testid="assistant-message"]',
+        ],
+      },
+      claude: {
+        user: ['[data-testid="user-message"]', ".font-user-message"],
+        assistant: [
+          '[data-testid="assistant-message"]',
+          ".font-claude-message",
+        ],
+      },
+      gemini: {
+        user: [
+          '[data-message-author="user"]',
+          ".query-content",
+          '[class*="user-query"]',
+        ],
+        assistant: [
+          '[data-message-author="model"]',
+          ".model-response-text",
+          '[class*="model-response"]',
+        ],
+      },
+      copilot: {
+        user: AIExporter.apiCopilot?.USER_SELECTORS || [],
+        assistant: AIExporter.apiCopilot?.ASSISTANT_SELECTORS || [],
+      },
+      deepseek: {
+        user: ['[class*="user"]', '[data-role="user"]'],
+        assistant: ['[class*="assistant"]', '[data-role="assistant"]'],
+      },
+      grok: {
+        user: ['[data-testid="user-message"]', '[class*="UserMessage"]'],
+        assistant: [
+          '[data-testid="assistant-message"]',
+          '[class*="AssistantMessage"]',
+        ],
+      },
+    };
+
+    const cfg = configs[platformId];
+    if (!cfg) return [];
+    return this.scrapeMessages(cfg.user, cfg.assistant);
+  },
 };

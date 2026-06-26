@@ -186,7 +186,10 @@ AIExporter.exporter = {
       }
     }
 
-    if (options.formats.includes("gemini-import")) {
+    if (
+      options.formats.includes("gemini-import") ||
+      options.formats.includes("gemini")
+    ) {
       const geminiFiles = AIExporter.formats.geminiImportFiles(prepared);
       for (const file of geminiFiles) {
         zipEntries.push({
@@ -277,7 +280,11 @@ AIExporter.exporter = {
       });
     }
 
-    if (options.formats.includes("gemini-import") && prepared.length) {
+    const includeGeminiImport =
+      options.formats.includes("gemini-import") ||
+      options.formats.includes("gemini");
+
+    if (includeGeminiImport && prepared.length) {
       zipEntries.push({
         path: "gemini-import/GEMINI_SETUP.md",
         data: AIExporter.formats.geminiImportSetup(prepared.length),

@@ -9,12 +9,28 @@ AIExporter.panel = {
   lastClickIndex: -1,
   panelFormats: [],
 
-  get api() {
+  getApi() {
     return AIExporter.platform.api;
   },
 
-  get parser() {
+  getParser() {
     return AIExporter.platform.parser;
+  },
+
+  scrapeDomMessages() {
+    const platformId = AIExporter.platform.id;
+    const scraped = AIExporter.domScraper.scrapeForPlatform(platformId);
+    return scraped.map((msg, index) => ({
+      id: msg.id || `dom-${index}`,
+      role: msg.role,
+      authorName: msg.role === "user" ? "You" : AIExporter.platform.label,
+      content: msg.content,
+      contentType: "text",
+      isReasoning: false,
+      timestamp: null,
+      images: [],
+      attachments: [],
+    }));
   },
 
   getConversationId() {
@@ -204,6 +220,7 @@ AIExporter.panel = {
 
   async open() {
     await this.create();
+    AIExporter.platform.init();
     const id = this.getConversationId();
     if (!id) {
       alert("Open a conversation first.");
@@ -216,15 +233,35 @@ AIExporter.panel = {
     this.setStatus("");
 
     try {
-      await this.api().init();
-      this.convo = await this.api().getConversation(id);
-      this.messages = this.parser().extractMessages(this.convo, {
+      const api = this.getApi();
+      const parser = this.getParser();
+      if (!api?.init || !api?.getConversation) {
+        throw new Error("Export API not available for this page. Refresh and try again.");
+      }
+
+      await api.init();
+      this.convo = await api.getConversation(id);
+      this.messages = parser.extractMessages(this.convo, {
         preserveCitations: true,
       });
+
+      if (!this.messages.length) {
+        this.messages = this.scrapeDomMessages();
+        if (this.messages.length) {
+          this.convo._panelMessages = this.messages;
+        }
+      }
+
+      if (!this.messages.length) {
+        throw new Error(
+          "No messages found. Scroll the chat to load history, then reopen the panel."
+        );
+      }
+
       this.selected = new Set(this.messages.map((m) => m.id));
       this.lastClickIndex = -1;
 
-      const summary = this.parser().toConversationSummary(this.convo);
+      const summary = parser.toConversationSummary(this.convo);
       if (summary.is_group_chat) {
         this.groupBadge.style.display = "inline";
         this.groupBadge.title = `Participants: ${summary.participants.join(", ")}`;
@@ -338,7 +375,7 @@ AIExporter.panel = {
   async copyMarkdown() {
     try {
       const opts = await this.getExportOptions();
-      const convo = this.parser().filterConvoMessages(this.convo, opts.selectedMessageIds);
+      const convo = this.getParser().filterConvoMessages(this.convo, opts.selectedMessageIds);
       await AIExporter.clipboard.copy(AIExporter.formats.markdown(convo, {}, opts));
       this.setStatus("Markdown copied!");
     } catch (err) {
@@ -349,7 +386,7 @@ AIExporter.panel = {
   async copyNotion() {
     try {
       const opts = await this.getExportOptions();
-      const convo = this.parser().filterConvoMessages(this.convo, opts.selectedMessageIds);
+      const convo = this.getParser().filterConvoMessages(this.convo, opts.selectedMessageIds);
       await AIExporter.clipboard.copy(AIExporter.formats.notion(convo, {}, opts));
       this.setStatus("Notion format copied!");
     } catch (err) {
@@ -360,8 +397,8 @@ AIExporter.panel = {
   async copyJson() {
     try {
       const opts = await this.getExportOptions();
-      const convo = this.parser().filterConvoMessages(this.convo, opts.selectedMessageIds);
-      const summary = this.parser().toConversationSummary(convo, opts);
+      const convo = this.getParser().filterConvoMessages(this.convo, opts.selectedMessageIds);
+      const summary = this.getParser().toConversationSummary(convo, opts);
       await AIExporter.clipboard.copy(JSON.stringify(summary, null, 2));
       this.setStatus("JSON copied!");
     } catch (err) {
@@ -372,7 +409,7 @@ AIExporter.panel = {
   async printPdf() {
     try {
       const opts = await this.getExportOptions();
-      const convo = this.parser().filterConvoMessages(this.convo, opts.selectedMessageIds);
+      const convo = this.getParser().filterConvoMessages(this.convo, opts.selectedMessageIds);
       const html = AIExporter.formats.html(convo, {}, opts);
       AIExporter.print.openPrintView(html, convo.title || "Chat Export");
       this.setStatus("Print dialog opened — Save as PDF");

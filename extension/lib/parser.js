@@ -12,31 +12,96 @@ AIExporter.parser = {
     return false;
   },
 
+  normalizeMapping(raw) {
+    if (!raw) return {};
+    if (Array.isArray(raw)) {
+      const map = {};
+      for (const node of raw) {
+        if (!node || typeof node !== "object") continue;
+        const id = node.id || node.message?.id;
+        if (id) map[id] = node;
+      }
+      return map;
+    }
+    if (typeof raw === "object") return raw;
+    return {};
+  },
+
+  findRootId(mapping) {
+    const entry = Object.entries(mapping).find(([, node]) => node?.parent == null);
+    return entry ? entry[0] : null;
+  },
+
+  getLinearNodeIds(convo, mapping) {
+    if (convo.current_node && mapping[convo.current_node]) {
+      const chain = [];
+      let nodeId = convo.current_node;
+      const guard = new Set();
+      while (nodeId && mapping[nodeId] && !guard.has(nodeId)) {
+        guard.add(nodeId);
+        chain.push(nodeId);
+        nodeId = mapping[nodeId].parent || null;
+      }
+      return chain.reverse();
+    }
+
+    const rootId = this.findRootId(mapping);
+    if (!rootId) return Object.keys(mapping);
+
+    const path = [];
+    let nodeId = rootId;
+    const guard = new Set();
+    while (nodeId && mapping[nodeId] && !guard.has(nodeId)) {
+      guard.add(nodeId);
+      path.push(nodeId);
+      const children = mapping[nodeId].children || [];
+      if (!children.length) break;
+      let next = children[children.length - 1];
+      for (const childId of children) {
+        const weight = mapping[childId]?.message?.weight;
+        if (weight == null || weight >= 1.0) {
+          next = childId;
+          break;
+        }
+      }
+      nodeId = next;
+    }
+    return path;
+  },
+
   extractMessages(convo, options = {}) {
-    const mapping = convo.mapping || {};
-    const rootId = Object.keys(mapping).find((key) => mapping[key].parent == null);
+    const panelMsgs = AIExporter.utils.panelMessages(convo, options);
+    if (panelMsgs) return panelMsgs;
+
+    const mapping = this.normalizeMapping(convo.mapping);
+    const nodeIds = this.getLinearNodeIds(convo, mapping);
     const messages = [];
     const selectedIds = options.selectedMessageIds?.length
       ? new Set(options.selectedMessageIds)
       : null;
 
-    if (!rootId) return messages;
+    if (!nodeIds.length) return messages;
 
-    const queue = [rootId];
-    while (queue.length) {
-      const nodeId = queue.shift();
+    for (const nodeId of nodeIds) {
       const node = mapping[nodeId] || {};
       const msg = node.message;
+      if (!msg?.content) continue;
 
-      if (msg?.content?.parts) {
-        if (!this.shouldSkipMessage(msg)) {
-          const role = msg.author?.role || "unknown";
-          const { text, contentType, isReasoning } =
-            AIExporter.partRenderer.renderMessageContent(msg, options);
+      const hasParts =
+        Array.isArray(msg.content.parts) && msg.content.parts.length > 0;
+      const hasText =
+        typeof msg.content.text === "string" && msg.content.text.trim();
+      if (!hasParts && !hasText) continue;
 
-          const images = [];
-          const attachments = [];
+      if (!this.shouldSkipMessage(msg)) {
+        const role = msg.author?.role || "unknown";
+        const { text, contentType, isReasoning } =
+          AIExporter.partRenderer.renderMessageContent(msg, options);
 
+        const images = [];
+        const attachments = [];
+
+        if (hasParts) {
           for (const part of msg.content.parts) {
             if (
               part?.content_type === "image_asset_pointer" &&
@@ -53,38 +118,36 @@ AIExporter.parser = {
               }
             }
           }
+        }
 
-          if (msg.metadata?.attachments) {
-            for (const att of msg.metadata.attachments) {
-              if (att.id) {
-                attachments.push({
-                  fileId: att.id,
-                  name: att.name || "attachment",
-                });
-              }
+        if (msg.metadata?.attachments) {
+          for (const att of msg.metadata.attachments) {
+            if (att.id) {
+              attachments.push({
+                fileId: att.id,
+                name: att.name || "attachment",
+              });
             }
           }
+        }
 
-          const hasContent = text || images.length || attachments.length;
-          const passesFilter = !selectedIds || selectedIds.has(nodeId);
+        const hasContent = text || images.length || attachments.length;
+        const passesFilter = !selectedIds || selectedIds.has(nodeId);
 
-          if (hasContent && passesFilter) {
-            messages.push({
-              id: nodeId,
-              role,
-              authorName: msg.author?.name || null,
-              content: text,
-              contentType,
-              isReasoning,
-              timestamp: AIExporter.utils.toIsoTimestamp(msg.create_time),
-              images,
-              attachments,
-            });
-          }
+        if (hasContent && passesFilter) {
+          messages.push({
+            id: nodeId,
+            role,
+            authorName: msg.author?.name || null,
+            content: text,
+            contentType,
+            isReasoning,
+            timestamp: AIExporter.utils.toIsoTimestamp(msg.create_time),
+            images,
+            attachments,
+          });
         }
       }
-
-      queue.push(...(node.children || []));
     }
 
     return messages;

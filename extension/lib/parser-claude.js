@@ -62,11 +62,14 @@ AIExporter.parserClaude = {
   },
 
   extractMessages(convo, options = {}) {
+    const panelMsgs = AIExporter.utils.panelMessages(convo, options);
+    if (panelMsgs) return panelMsgs;
+
     const selectedIds = options.selectedMessageIds?.length
       ? new Set(options.selectedMessageIds)
       : null;
 
-    let messages = convo.chat_messages || [];
+    let messages = convo.chat_messages || convo.messages || [];
     messages = this.selectActiveLineage(
       messages,
       convo.current_leaf_message_uuid

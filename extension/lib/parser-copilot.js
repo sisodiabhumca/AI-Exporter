@@ -3,6 +3,9 @@ var AIExporter = AIExporter || {};
 
 AIExporter.parserCopilot = {
   extractMessages(convo, options = {}) {
+    const panelMsgs = AIExporter.utils.panelMessages(convo, options);
+    if (panelMsgs) return panelMsgs;
+
     const selectedIds = options.selectedMessageIds?.length
       ? new Set(options.selectedMessageIds)
       : null;
