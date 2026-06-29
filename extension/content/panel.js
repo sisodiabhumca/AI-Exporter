@@ -126,6 +126,10 @@ AIExporter.panel = {
       .aie-panel-footer button.primary {
         background: #10a37f; color: #fff; border-color: #10a37f;
       }
+      .aie-panel-footer button.aie-report-btn {
+        margin-top: 6px; width: 100%; font-size: 11px;
+        color: #1a7f64; border-color: #b8e0d4; background: #f8fffc;
+      }
       .aie-panel-status { font-size: 11px; color: #888; text-align: center; min-height: 16px; }
       .aie-panel-loading { padding: 40px; text-align: center; color: #888; }
       .aie-hint { font-size: 11px; color: #888; padding: 0 16px 8px; }
@@ -266,6 +270,14 @@ AIExporter.panel = {
 
     footer.appendChild(row1);
     footer.appendChild(row2);
+
+    const reportBtn = document.createElement("button");
+    reportBtn.type = "button";
+    reportBtn.className = "aie-report-btn";
+    reportBtn.dataset.action = "report";
+    reportBtn.textContent = "Report issue on GitHub";
+    footer.appendChild(reportBtn);
+
     footer.appendChild(statusEl);
 
     el.appendChild(header);
@@ -307,6 +319,12 @@ AIExporter.panel = {
       if (action === "copy-md") this.copyMarkdown();
       if (action === "copy-json") this.copyJson();
       if (action === "copy-notion") this.copyNotion();
+      if (action === "report") {
+        AIExporter.feedback?.openIssue({
+          error: this.statusEl?.textContent || undefined,
+          context: { url: location.href },
+        });
+      }
     });
 
     this.listEl = this.el.querySelector("#aie-message-list");
@@ -330,8 +348,7 @@ AIExporter.panel = {
     AIExporter.platform.init();
     const id = this.getConversationId();
     if (!id) {
-      alert("Open a conversation first.");
-      return;
+      return { success: false, error: "Open a conversation first." };
     }
 
     this.backdrop.classList.add("open");
@@ -346,8 +363,20 @@ AIExporter.panel = {
         throw new Error("Export API not available for this page. Refresh and try again.");
       }
 
-      await api.init();
-      this.convo = await api.getConversation(id);
+      let apiError = null;
+      try {
+        await api.init();
+        this.convo = await api.getConversation(id);
+      } catch (err) {
+        apiError = err;
+        this.convo = {
+          id,
+          conversation_id: id,
+          title: document.title || "Current chat",
+          source: AIExporter.platform.id,
+        };
+      }
+
       this.messages = parser.extractMessages(this.convo, {
         preserveCitations: true,
       });
@@ -360,8 +389,11 @@ AIExporter.panel = {
       }
 
       if (!this.messages.length) {
-        throw new Error(
-          "No messages found. Scroll the chat to load history, then reopen the panel."
+        throw (
+          apiError ||
+          new Error(
+            "No messages found. Scroll the chat to load history, then reopen the panel."
+          )
         );
       }
 
@@ -378,8 +410,11 @@ AIExporter.panel = {
 
       this.renderList();
       this.setStatus(`${this.messages.length} messages · ${this.selected.size} selected`);
+      return { success: true };
     } catch (err) {
       this.setListPlaceholder(`Failed: ${err.message}`);
+      this.setStatus("Use “Report issue on GitHub” below if this persists.");
+      return { success: false, error: err.message };
     }
   },
 

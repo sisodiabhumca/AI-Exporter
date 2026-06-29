@@ -89,7 +89,54 @@ AIExporter.domScraper = {
     return results;
   },
 
+  scrapeGeminiMessages() {
+    const messages = [];
+    const chatRoot =
+      document.querySelector("#chat-history, chat-window, main") || document.body;
+    const turns = chatRoot.querySelectorAll("user-query, model-response");
+
+    for (const turn of turns) {
+      const tag = turn.tagName.toLowerCase();
+      const role = tag === "user-query" ? "user" : "assistant";
+      const textEl =
+        turn.querySelector(
+          ".query-text, .markdown, message-content, .model-response-text, .response-content, .response-container-content"
+        ) || turn;
+      const text = this.textFrom(textEl);
+      if (text) {
+        messages.push({
+          id: `dom-${messages.length}`,
+          role,
+          content: text,
+        });
+      }
+    }
+
+    if (messages.length) return messages;
+
+    const blocks = chatRoot.querySelectorAll(
+      ".conversation-container, [data-test-id='conversation-turn'], article"
+    );
+    for (const block of blocks) {
+      const isUser =
+        block.matches("user-query, .user-query, [data-message-author='user']") ||
+        block.querySelector("user-query, .user-query");
+      const role = isUser ? "user" : "assistant";
+      const text = this.textFrom(block);
+      if (text.length > 2) {
+        messages.push({ id: `dom-${messages.length}`, role, content: text });
+      }
+    }
+
+    return messages;
+  },
+
   scrapeForPlatform(platformId) {
+    if (platformId === "gemini") {
+      const geminiMessages = this.scrapeGeminiMessages();
+      if (geminiMessages.length) return geminiMessages;
+    }
+
     const configs = {
       chatgpt: {
         user: [
@@ -110,11 +157,16 @@ AIExporter.domScraper = {
       },
       gemini: {
         user: [
+          "user-query",
+          ".query-text",
           '[data-message-author="user"]',
           ".query-content",
           '[class*="user-query"]',
         ],
         assistant: [
+          "model-response",
+          "message-content",
+          ".markdown",
           '[data-message-author="model"]',
           ".model-response-text",
           '[class*="model-response"]',
@@ -125,8 +177,16 @@ AIExporter.domScraper = {
         assistant: AIExporter.apiCopilot?.ASSISTANT_SELECTORS || [],
       },
       deepseek: {
-        user: ['[class*="user"]', '[data-role="user"]'],
-        assistant: ['[class*="assistant"]', '[data-role="assistant"]'],
+        user: [
+          '[data-testid="user-message"]',
+          '[data-role="user"]',
+          ".user-message",
+        ],
+        assistant: [
+          '[data-testid="assistant-message"]',
+          '[data-role="assistant"]',
+          ".assistant-message",
+        ],
       },
       grok: {
         user: ['[data-testid="user-message"]', '[class*="UserMessage"]'],

@@ -10,9 +10,13 @@ AIExporter.apiGrok = {
   async init() {
     this.accountId = "grok";
     try {
-      await this.get("/conversations?pageSize=1");
-    } catch {
-      throw new Error("Not logged in. Please sign in to grok.com first.");
+      await this.fetchJSON("/conversations?pageSize=1");
+    } catch (err) {
+      const msg = String(err?.message || err);
+      if (/401|403/.test(msg)) {
+        throw new Error("Not logged in. Please sign in to grok.com first.");
+      }
+      throw new Error(`Could not connect to Grok (${msg}). Refresh grok.com and try again.`);
     }
     return { accountId: this.accountId, email: null };
   },
@@ -33,21 +37,33 @@ AIExporter.apiGrok = {
   },
 
   async listConversations(onProgress) {
-    const data = await this.fetchJSON("/conversations?pageSize=200");
-    const list = (data?.conversations || []).map((c) => ({
-      id: c.conversationId || c.id,
-      title: c.title || "Untitled",
-      create_time: c.createTime ? Date.parse(c.createTime) / 1000 : null,
-      update_time: c.modifyTime ? Date.parse(c.modifyTime) / 1000 : null,
-    }));
+    const all = [];
+    const pageSize = 200;
+    let page = 0;
 
-    onProgress?.({
-      phase: "listing",
-      current: list.length,
-      total: list.length,
-    });
+    while (page < 50) {
+      const data = await this.fetchJSON(
+        `/conversations?pageSize=${pageSize}&page=${page}`
+      );
+      const batch = (data?.conversations || []).map((c) => ({
+        id: c.conversationId || c.id,
+        title: c.title || "Untitled",
+        create_time: c.createTime ? Date.parse(c.createTime) / 1000 : null,
+        update_time: c.modifyTime ? Date.parse(c.modifyTime) / 1000 : null,
+      }));
 
-    return list;
+      if (!batch.length) break;
+      all.push(...batch);
+      onProgress?.({
+        phase: "listing",
+        current: all.length,
+        total: all.length,
+      });
+      if (batch.length < pageSize) break;
+      page += 1;
+    }
+
+    return all;
   },
 
   async getResponseIds(conversationId) {

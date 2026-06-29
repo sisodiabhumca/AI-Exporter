@@ -17,6 +17,7 @@ AIExporter.browser = (() => {
         });
         if (result && typeof result.then === "function") {
           result.then(resolve).catch(reject);
+          return;
         }
       } catch (err) {
         reject(err);

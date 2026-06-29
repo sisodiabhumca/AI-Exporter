@@ -42,8 +42,17 @@ ext.alarms?.onAlarm.addListener(async (alarm) => {
           includeFiles: false,
         },
       });
-    } catch {
-      // tab may not have content script loaded
+    } catch (err) {
+      if (ext.notifications) {
+        ext.notifications.create(`ai-exporter-scheduled-fail-${Date.now()}`, {
+          type: "basic",
+          iconUrl: ext.runtime.getURL("icons/icon128.png"),
+          title: "AI Exporter — scheduled export failed",
+          message:
+            err?.message ||
+            "Could not connect to the tab. Refresh the page and try again.",
+        });
+      }
     }
     return;
   }

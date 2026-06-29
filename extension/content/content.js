@@ -38,12 +38,13 @@ AIExporter.ui = {
           margin: 12px 0 0; font-size: 12px; color: #888;
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        #ai-exporter-cancel {
+        #ai-exporter-cancel, #ai-exporter-feedback {
           margin-top: 16px; background: none; border: 1px solid #ddd;
           border-radius: 8px; padding: 8px 16px; cursor: pointer;
-          font-size: 13px; color: #666;
+          font-size: 13px; color: #666; width: 100%;
         }
-        #ai-exporter-cancel:hover { background: #f5f5f5; }
+        #ai-exporter-cancel:hover, #ai-exporter-feedback:hover { background: #f5f5f5; }
+        #ai-exporter-feedback { margin-top: 8px; color: #1a7f64; border-color: #b8e0d4; }
       </style>
       <div id="ai-exporter-card">
         <h2>AI Exporter</h2>
@@ -74,18 +75,47 @@ AIExporter.ui = {
     if (detail != null) this.detailEl.textContent = detail;
   },
 
-  done(message) {
-    this.set(message, 100, "Click anywhere to close.");
-    this.barEl.style.background = "#22c55e";
-    this.overlay.querySelector("#ai-exporter-cancel").style.display = "none";
-    this.overlay.addEventListener("click", () => this.remove(), { once: true });
+  addFeedbackButton(context = {}) {
+    if (!AIExporter.feedback || this.overlay.querySelector("#ai-exporter-feedback")) {
+      return;
+    }
+    const btn = document.createElement("button");
+    btn.id = "ai-exporter-feedback";
+    btn.type = "button";
+    btn.textContent = "Report issue on GitHub";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      AIExporter.feedback.openIssue({
+        error: context.message || context.exportErrors?.[0]?.error,
+        context: {
+          failedCount: context.failed,
+          platformLabel: AIExporter.platform?.label,
+          url: location.href,
+        },
+      });
+    });
+    this.overlay.querySelector("#ai-exporter-card").appendChild(btn);
   },
 
-  error(message) {
+  finish(closeOnClick = true) {
+    this.overlay.querySelector("#ai-exporter-cancel").style.display = "none";
+    if (closeOnClick) {
+      this.overlay.addEventListener("click", () => this.remove(), { once: true });
+    }
+  },
+
+  done(message, context = {}) {
+    this.set(message, 100, "Click anywhere to close.");
+    this.barEl.style.background = "#22c55e";
+    if (context.failed) this.addFeedbackButton({ ...context, message });
+    this.finish();
+  },
+
+  error(message, exportErrors = []) {
     this.set(message, null, "Click anywhere to close.");
     this.barEl.style.background = "#ef4444";
-    this.overlay.querySelector("#ai-exporter-cancel").style.display = "none";
-    this.overlay.addEventListener("click", () => this.remove(), { once: true });
+    this.addFeedbackButton({ message, exportErrors, failed: exportErrors.length });
+    this.finish();
   },
 
   remove() {
@@ -100,19 +130,23 @@ AIExporter.ui = {
 
 AIExporter.browser.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "AI_EXPORTER_START") {
-    AIExporter.exporter.run(message.options).then(sendResponse);
+    AIExporter.exporter
+      .run(message.options)
+      .then(sendResponse)
+      .catch((err) => sendResponse({ success: false, error: err?.message || String(err) }));
     return true;
   }
 
   if (message.type === "AI_EXPORTER_SINGLE") {
     AIExporter.exporter
       .runSingle(message.conversationId, message.options)
-      .then(sendResponse);
+      .then(sendResponse)
+      .catch((err) => sendResponse({ success: false, error: err?.message || String(err) }));
     return true;
   }
 
   if (message.type === "AI_EXPORTER_OPEN_PANEL") {
-    AIExporter.panel.open().then(() => sendResponse({ success: true }));
+    AIExporter.panel.open().then(sendResponse);
     return true;
   }
 

@@ -37,7 +37,7 @@ AIExporter.compliance = {
       schema: "ai-exporter-compliance-manifest",
       version: "2.0",
       exported_at: new Date().toISOString(),
-      exporter_version: meta.exporterVersion || "1.7.0",
+      exporter_version: meta.exporterVersion || AIExporter.feedback?.getVersion?.() || "unknown",
       platform: meta.platform || AIExporter.platform?.id || "chatgpt",
       account_id: meta.accountId || null,
       conversation_count: meta.conversationCount || 0,

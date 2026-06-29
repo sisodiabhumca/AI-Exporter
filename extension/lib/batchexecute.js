@@ -42,10 +42,13 @@ AIExporter.batchexecute = {
           if (!Array.isArray(part) || part.length < 3) continue;
           const rpcId = part[0];
           const innerRaw = part[2];
-          if (typeof innerRaw !== "string") continue;
-          try {
-            results.push({ rpcId, data: JSON.parse(innerRaw) });
-          } catch {
+          if (typeof innerRaw === "string") {
+            try {
+              results.push({ rpcId, data: JSON.parse(innerRaw) });
+            } catch {
+              results.push({ rpcId, data: innerRaw });
+            }
+          } else if (innerRaw != null) {
             results.push({ rpcId, data: innerRaw });
           }
         }
@@ -66,11 +69,21 @@ AIExporter.batchexecute = {
       return null;
     };
 
-    return {
+    const tokens = {
       at: pick([/"SNlM0e":"([^"]+)"/, /SNlM0e['"]\s*,\s*['"]([^'"]+)/]),
       bl: pick([/"cfb2h":"([^"]+)"/, /"bl":"([^"]+)"/]),
       sid: pick([/"FdrFJe":"([^"]+)"/, /"f\.sid":"([^"]+)"/]),
     };
+
+    const wiz =
+      typeof window !== "undefined" ? window.WIZ_global_data : null;
+    if (wiz && typeof wiz === "object") {
+      if (wiz.SNlM0e) tokens.at = String(wiz.SNlM0e);
+      if (wiz.cfb2h) tokens.bl = String(wiz.cfb2h);
+      if (wiz.FdrFJe) tokens.sid = String(wiz.FdrFJe);
+    }
+
+    return tokens;
   },
 
   async fetchTokens() {
@@ -92,14 +105,18 @@ AIExporter.batchexecute = {
     }
 
     this._tokens = tokens;
+    this._tokensAt = Date.now();
     return tokens;
   },
 
-  async call(rpcId, payload, tokens = null) {
+  async call(rpcId, payload, tokens = null, retried = false) {
+    if (this._tokensAt && Date.now() - this._tokensAt > 30 * 60 * 1000) {
+      this._tokens = null;
+    }
     const tok = tokens || (await this.fetchTokens());
     const reqId = Math.floor(Math.random() * 900000) + 100000;
     const payloadStr = JSON.stringify(payload);
-    const fReq = JSON.stringify([[rpcId, payloadStr, null, "generic"]]);
+    const fReq = JSON.stringify([[ [rpcId, payloadStr, null, "generic"] ]]);
 
     const params = new URLSearchParams({
       rpcids: rpcId,
@@ -125,13 +142,19 @@ AIExporter.batchexecute = {
     );
 
     if (!resp.ok) {
+      if (resp.status === 400 && !retried) {
+        this._tokens = null;
+        return this.call(rpcId, payload, await this.fetchTokens(), true);
+      }
       throw new Error(`Gemini API HTTP ${resp.status}`);
     }
 
     const text = await resp.text();
     const parsed = this.parseResponse(text);
-    const match = parsed.find((p) => p.rpcId === rpcId) || parsed[0];
-    if (!match) throw new Error(`No data in Gemini response for ${rpcId}`);
+    const match = parsed.find((p) => p.rpcId === rpcId);
+    if (!match) {
+      throw new Error(`No data in Gemini response for ${rpcId}`);
+    }
     return match.data;
   },
 };

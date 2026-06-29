@@ -1,5 +1,7 @@
 const ext = typeof globalThis.browser !== "undefined" ? globalThis.browser : globalThis.chrome;
 
+const ISSUES_URL = "https://github.com/sisodiabhumca/AI-Exporter/issues/new";
+
 const PLATFORMS = {
   chatgpt: { hosts: ["chatgpt.com", "chat.openai.com"], label: "ChatGPT", url: "https://chatgpt.com" },
   claude: { hosts: ["claude.ai"], label: "Claude", url: "https://claude.ai" },
@@ -18,8 +20,57 @@ const subtitle = document.getElementById("subtitle");
 const searchInput = document.getElementById("search-query");
 const scopeRadios = document.querySelectorAll('input[name="scope"]');
 const chatgptOnlyEls = document.querySelectorAll("[data-chatgpt-only]");
+const copilotRestrictedEls = document.querySelectorAll("[data-copilot-restricted]");
+const copilotScopeHint = document.getElementById("copilot-scope-hint");
+const feedbackNotes = document.getElementById("feedback-notes");
+const feedbackSteps = document.getElementById("feedback-steps");
+const feedbackBtn = document.getElementById("feedback-btn");
 
 let currentPlatform = null;
+
+function getExtensionVersion() {
+  try {
+    return ext.runtime.getManifest().version;
+  } catch {
+    return "unknown";
+  }
+}
+
+function buildFeedbackBody({ error, userNotes, steps, platformLabel, url, failedCount } = {}) {
+  return [
+    "## What happened",
+    userNotes || error || "(please describe the issue)",
+    "",
+    "## Steps to reproduce",
+    steps || "1. Open AI chat site\n2. Click Export\n3. ",
+    "",
+    "## Environment",
+    `- Extension version: ${getExtensionVersion()}`,
+    `- Platform: ${platformLabel || "unknown"}`,
+    `- Page URL: ${url || "n/a"}`,
+    error ? `- Error message: ${error}` : "",
+    failedCount != null ? `- Failed conversations: ${failedCount}` : "",
+    "",
+    "---",
+    "Submitted via AI Exporter popup feedback (no chat content included).",
+  ]
+    .filter((line) => line !== undefined)
+    .join("\n");
+}
+
+function openFeedbackIssue(opts = {}) {
+  const title = encodeURIComponent(
+    opts.title || `[Bug] ${opts.platformLabel || "AI Exporter"} — export issue`
+  );
+  const body = encodeURIComponent(buildFeedbackBody(opts));
+  ext.tabs.create({ url: `${ISSUES_URL}?title=${title}&body=${body}` });
+}
+
+function prefillFeedback(errorText) {
+  if (!errorText || feedbackNotes.value.trim()) return;
+  feedbackNotes.value = errorText;
+  feedbackNotes.focus();
+}
 
 function storageGet(keys) {
   const r = ext.storage.local.get(keys);
@@ -81,6 +132,7 @@ function getScope() {
 function updatePlatformUI(platform) {
   currentPlatform = platform;
   const isChatgpt = platform?.id === "chatgpt";
+  const isCopilot = platform?.id === "copilot";
 
   chatgptOnlyEls.forEach((el) => {
     el.classList.toggle("hidden", !isChatgpt);
@@ -88,6 +140,13 @@ function updatePlatformUI(platform) {
       el.querySelector('input[type="checkbox"]').checked = false;
     }
   });
+
+  copilotRestrictedEls.forEach((el) => el.classList.toggle("hidden", isCopilot));
+  copilotScopeHint?.classList.toggle("hidden", !isCopilot);
+  if (isCopilot) {
+    const currentRadio = document.querySelector('input[name="scope"][value="current"]');
+    if (currentRadio) currentRadio.checked = true;
+  }
 
   if (platform) {
     platformBadge.textContent = platform.label;
@@ -235,20 +294,48 @@ exportBtn.addEventListener("click", async () => {
     });
 
     if (response?.success) {
-      statusEl.textContent =
-        response.count === 0
-          ? "No conversations to export."
-          : `Exported ${response.count} conversation${response.count === 1 ? "" : "s"}. Check downloads.`;
+      statusEl.classList.remove("status-error");
+      if (response.count === 0 && response.failed) {
+        const errDetail = response.errors?.[0]?.error;
+        statusEl.textContent = errDetail
+          ? `Export failed: ${errDetail}`
+          : `Export failed for ${response.failed} conversation${response.failed === 1 ? "" : "s"}.`;
+        statusEl.classList.add("status-error");
+        prefillFeedback(statusEl.textContent);
+      } else if (response.count === 0) {
+        statusEl.textContent = "No conversations to export.";
+      } else {
+        statusEl.textContent = `Exported ${response.count} conversation${response.count === 1 ? "" : "s"}. Check downloads.`;
+        if (response.failed) {
+          statusEl.textContent += ` (${response.failed} failed)`;
+          prefillFeedback(response.errors?.[0]?.error || statusEl.textContent);
+        }
+      }
     } else if (response?.cancelled) {
+      statusEl.classList.remove("status-error");
       statusEl.textContent = "Export cancelled.";
     } else {
       statusEl.textContent = response?.error || "Export failed.";
+      statusEl.classList.add("status-error");
+      prefillFeedback(statusEl.textContent);
     }
-  } catch {
+  } catch (err) {
     statusEl.textContent = `Could not connect. Refresh ${currentPlatform?.url || "the page"} and try again.`;
+    statusEl.classList.add("status-error");
+    prefillFeedback(err?.message || statusEl.textContent);
   }
 
   exportBtn.disabled = false;
+});
+
+feedbackBtn?.addEventListener("click", async () => {
+  const tab = await getActiveTab();
+  openFeedbackIssue({
+    userNotes: feedbackNotes?.value.trim(),
+    steps: feedbackSteps?.value.trim(),
+    platformLabel: currentPlatform?.label,
+    url: tab?.url,
+  });
 });
 
 init();

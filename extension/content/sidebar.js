@@ -112,25 +112,6 @@ AIExporter.sidebar = {
     }
   },
 
-  async exportCurrent() {
-    const id = this.getConversationIdFromUrl();
-    if (!id || !this.button) return;
-
-    this.button.disabled = true;
-    this.button.querySelector(".ai-exporter-fab-label").textContent =
-      "Exporting...";
-
-    try {
-      await AIExporter.exporter.runSingle(id);
-    } finally {
-      if (this.button) {
-        this.button.disabled = false;
-        this.button.querySelector(".ai-exporter-fab-label").textContent =
-          "Export chat";
-      }
-    }
-  },
-
   watchNavigation() {
     let throttleTimer = null;
     const check = () => {

@@ -21,12 +21,13 @@
     <section>
       <label class="section-label">Export scope</label>
       <div class="radio-group">
-        <label><input type="radio" name="scope" value="all" checked /> All conversations</label>
+        <label data-copilot-restricted><input type="radio" name="scope" value="all" checked /> All conversations</label>
         <label><input type="radio" name="scope" value="current" /> Current conversation only</label>
-        <label><input type="radio" name="scope" value="new" /> New since last export</label>
+        <label data-copilot-restricted><input type="radio" name="scope" value="new" /> New since last export</label>
         <label><input type="radio" name="scope" value="search" /> Search by title</label>
       </div>
       <input type="text" id="search-query" class="hidden" placeholder="Filter by title keyword..." />
+      <p id="copilot-scope-hint" class="hint hint-block hidden">Copilot: use <strong>Current conversation only</strong> or the in-page Export panel.</p>
       <p class="hint hint-block">Use the <strong>Export</strong> button on any chat for selective export.</p>
     </section>
 
@@ -108,6 +109,14 @@
 
     <button id="export-btn" type="button">Export conversations</button>
     <p id="status" class="status hidden"></p>
+
+    <section id="feedback-section" class="feedback-section">
+      <label class="section-label" for="feedback-notes">Report an issue</label>
+      <p class="hint hint-block">Found a bug or export error? No chat content is included.</p>
+      <textarea id="feedback-notes" rows="3" placeholder="What went wrong?"></textarea>
+      <textarea id="feedback-steps" rows="2" placeholder="Steps to reproduce (optional)"></textarea>
+      <button id="feedback-btn" type="button" class="feedback-btn">Submit feedback on GitHub</button>
+    </section>
   </main>
 
   <footer>

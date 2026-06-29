@@ -13,7 +13,16 @@ AIExporter.api = {
 
   async init() {
     this.deviceId = crypto.randomUUID();
-    const session = await fetch("/api/auth/session").then((r) => r.json());
+    const resp = await fetch("/api/auth/session");
+    if (!resp.ok) {
+      throw new Error(`ChatGPT session check failed (HTTP ${resp.status}). Refresh and sign in again.`);
+    }
+    let session;
+    try {
+      session = await resp.json();
+    } catch {
+      throw new Error("Could not read ChatGPT session. Refresh chatgpt.com and try again.");
+    }
     this.token = session.accessToken;
     if (!this.token) {
       throw new Error("Not logged in. Please sign in to ChatGPT first.");

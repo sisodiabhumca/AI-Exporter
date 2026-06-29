@@ -2,6 +2,8 @@
 var AIExporter = AIExporter || {};
 
 AIExporter.exporter = {
+  exportInProgress: false,
+
   DEFAULT_FORMATS: [
     "universal",
     "markdown",
@@ -81,6 +83,7 @@ AIExporter.exporter = {
   async processConversation(convo, options, fname) {
     const zipEntries = [];
     const fileMap = {};
+    const fileDownloadFailures = [];
     const prepared = this.prepareConvo(convo, options);
     const fmtOpts = this.formatOptions(options);
 
@@ -101,9 +104,20 @@ AIExporter.exporter = {
           zipEntries.push({ path: `files/${fname}/${actualName}`, data });
           fileMap[ref.fileId] = `../files/${fname}/${actualName}`;
           await AIExporter.utils.sleep(this.api().DELAY_MS);
-        } catch {
-          // skip failed file downloads
+        } catch (err) {
+          fileDownloadFailures.push({
+            fileId: ref.fileId,
+            filename: ref.filename,
+            error: err?.message || String(err),
+          });
         }
+      }
+
+      if (fileDownloadFailures.length) {
+        zipEntries.push({
+          path: `files/${fname}/_download-warnings.json`,
+          data: JSON.stringify(fileDownloadFailures, null, 2),
+        });
       }
     }
 
@@ -216,7 +230,7 @@ AIExporter.exporter = {
         data: JSON.stringify(
           AIExporter.formats.universal(prepared, {
             accountId: this.api().accountId,
-            exporterVersion: "1.7.0",
+            exporterVersion: AIExporter.feedback.getVersion(),
             source: AIExporter.platform.id,
           }),
           null,
@@ -349,16 +363,30 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
           new Error("Open a conversation first, or use the Export panel.")
         );
       }
-      filtered = list.filter((c) => c.id === id);
+      const norm = AIExporter.platform.normalizeConversationId?.(id) || id;
+      filtered = list.filter(
+        (c) =>
+          c.id === id ||
+          c.id === norm ||
+          AIExporter.platform.conversationIdsMatch?.(c.id, id)
+      );
       if (!filtered.length) {
-        filtered = [{ id, title: "Current conversation" }];
+        filtered = [{ id: norm, title: "Current conversation" }];
       }
       return Promise.resolve(filtered);
     }
 
     if (options.conversationIds?.length) {
-      const ids = new Set(options.conversationIds);
-      filtered = list.filter((c) => ids.has(c.id));
+      const ids = new Set(
+        options.conversationIds.flatMap((id) => {
+          const norm = AIExporter.platform.normalizeConversationId?.(id) || id;
+          return [id, norm];
+        })
+      );
+      filtered = list.filter((c) => {
+        const norm = AIExporter.platform.normalizeConversationId?.(c.id) || c.id;
+        return ids.has(c.id) || ids.has(norm);
+      });
     }
 
     if (options.searchQuery) {
@@ -370,9 +398,11 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
 
     if (options.scope === "new") {
       return this.getLastExportTime().then((lastExport) =>
-        filtered.filter(
-          (c) => (c.update_time || c.create_time || 0) > lastExport
-        )
+        filtered.filter((c) => {
+          const ts = c.update_time || c.create_time;
+          if (ts == null) return true;
+          return ts > lastExport;
+        })
       );
     }
 
@@ -380,12 +410,18 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
   },
 
   async run(options = {}) {
+    if (this.exportInProgress) {
+      throw new Error("An export is already in progress. Wait for it to finish.");
+    }
+    this.exportInProgress = true;
+
     const opts = await this.defaultOptions(options);
     const ui = AIExporter.ui.show();
     const zipEntries = [];
     const fullConversations = [];
     const htmlEntries = [];
     let failed = 0;
+    const exportErrors = [];
 
     try {
       ui.set(`Connecting to ${AIExporter.platform.label}...`);
@@ -445,8 +481,16 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
         const title = rawTitle || "Untitled";
 
         try {
-          const convo = await this.api().getConversation(id);
+          let convo = await this.api().getConversation(id);
           if (!convo.title && title !== id.slice(0, 8)) convo.title = title;
+
+          const summary = this.parser().toConversationSummary(
+            this.prepareConvo(convo, opts),
+            this.formatOptions(opts)
+          );
+          if (!summary.messages?.length) {
+            throw new Error("No messages found in conversation");
+          }
 
           fullConversations.push(convo);
           const fname = this.buildFname(convo, opts);
@@ -456,8 +500,13 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
           if (result.htmlBody) {
             htmlEntries.push({ title: result.title, html: result.htmlBody, fname });
           }
-        } catch {
+        } catch (err) {
           failed += 1;
+          exportErrors.push({
+            id,
+            title,
+            error: err?.message || String(err),
+          });
         }
 
         completed += 1;
@@ -467,6 +516,14 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
       });
 
       if (ui.isCancelled()) throw new Error("Cancelled");
+
+      if (!fullConversations.length) {
+        const detail =
+          exportErrors[0]?.error ||
+          "No conversations could be exported. Try Current conversation only.";
+        ui.error(detail, exportErrors);
+        return { success: false, count: 0, failed, errors: exportErrors };
+      }
 
       ui.set("Building export files...", 88);
       this.appendAggregateFormats(zipEntries, fullConversations, opts, htmlEntries);
@@ -479,7 +536,7 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
         const manifest = await AIExporter.compliance.buildManifest(zipEntries, {
           accountId: this.api().accountId,
           conversationCount: fullConversations.length,
-          exporterVersion: "1.7.0",
+          exporterVersion: AIExporter.feedback.getVersion(),
           platform: AIExporter.platform.id,
         });
         zipEntries.push({
@@ -499,6 +556,23 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
         });
       }
 
+      if (failed > 0) {
+        zipEntries.push({
+          path: "export-errors.json",
+          data: JSON.stringify(
+            {
+              exported_at: new Date().toISOString(),
+              platform: AIExporter.platform.id,
+              version: AIExporter.feedback.getVersion(),
+              failed,
+              errors: exportErrors,
+            },
+            null,
+            2
+          ),
+        });
+      }
+
       ui.set("Creating ZIP archive...", 95);
       const blob = AIExporter.zip.buildBlob(zipEntries);
       const date = AIExporter.utils.formatDateShort();
@@ -509,7 +583,11 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
       const prefix = AIExporter.platform.exportPrefix;
       AIExporter.zip.downloadBlob(blob, `${prefix}-export${suffix}-${date}.zip`);
 
-      await AIExporter.browser.storageSet({ lastExportTime: Date.now() / 1000 });
+      const succeeded = total - failed;
+      if (succeeded > 0) {
+        await AIExporter.browser.storageSet({ lastExportTime: Date.now() / 1000 });
+      }
+
       await AIExporter.prefs.save({
         formats: opts.formats,
         includeFiles: opts.includeFiles,
@@ -517,19 +595,20 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
         filenameTemplate: opts.filenameTemplate,
       });
 
-      const succeeded = total - failed;
       let msg = `Done! Exported ${succeeded} conversation${succeeded === 1 ? "" : "s"}.`;
       if (failed) msg += ` (${failed} failed)`;
-      ui.done(msg);
+      ui.done(msg, { failed, exportErrors });
 
-      return { success: true, count: succeeded, failed };
+      return { success: true, count: succeeded, failed, errors: exportErrors };
     } catch (err) {
       if (err.message === "Cancelled") {
         ui.error("Export cancelled.");
         return { success: false, cancelled: true };
       }
-      ui.error(`Export failed: ${err.message}`);
+      ui.error(`Export failed: ${err.message}`, [{ error: err.message }]);
       return { success: false, error: err.message };
+    } finally {
+      this.exportInProgress = false;
     }
   },
 

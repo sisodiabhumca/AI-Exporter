@@ -2,13 +2,21 @@
 var AIExporter = AIExporter || {};
 
 AIExporter.formats = {
+  platformLabel() {
+    return AIExporter.platform?.label || "AI chat";
+  },
+
+  exportAttributionLine() {
+    return `> Exported from ${this.platformLabel()} via AI Exporter`;
+  },
+
   universal(conversations, meta = {}) {
     return {
       version: "1.1",
       schema: "ai-exporter-universal",
       source: meta.source || AIExporter.platform?.id || "chatgpt",
       exported_at: new Date().toISOString(),
-      exporter_version: meta.exporterVersion || "1.7.0",
+      exporter_version: meta.exporterVersion || AIExporter.feedback?.getVersion?.() || "unknown",
       account_id: meta.accountId || null,
       conversation_count: conversations.length,
       conversations: conversations.map((c) =>
@@ -108,8 +116,8 @@ AIExporter.formats = {
 
     if (dateStr) lines.push(`*${dateStr}*`, "");
     lines.push(
-      "> Exported from ChatGPT via AI Exporter",
-      "> Portable format — paste into Claude, Gemini, or any AI chat",
+      this.exportAttributionLine(),
+      "> Portable format — paste into another AI chat or knowledge base",
       ""
     );
     lines.push(this.messagesToMarkdown(summary, fileMap, options));
@@ -250,7 +258,7 @@ AIExporter.formats = {
     }
 
     lines.push(
-      "> Exported from ChatGPT via AI Exporter",
+      this.exportAttributionLine(),
       "> Import: paste into a Notion page or use Notion import",
       ""
     );
@@ -333,7 +341,7 @@ AIExporter.formats = {
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<title>ChatGPT Export — AI Exporter</title>
+<title>${AIExporter.formats.platformLabel()} Export — AI Exporter</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; height: 100vh; color: #0d0d0d; }

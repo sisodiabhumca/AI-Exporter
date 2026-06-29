@@ -90,6 +90,20 @@ AIExporter.platform = {
     return m ? m[1] : null;
   },
 
+  normalizeConversationId(id) {
+    if (!id || this.id !== "gemini") return id;
+    return id.startsWith("c_") ? id : `c_${id}`;
+  },
+
+  conversationIdsMatch(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (this.id === "gemini") {
+      return this.normalizeConversationId(a) === this.normalizeConversationId(b);
+    }
+    return false;
+  },
+
   init() {
     this.id = this.detect();
     return this.id;

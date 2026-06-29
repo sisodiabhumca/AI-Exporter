@@ -59,24 +59,39 @@ AIExporter.apiDeepseek = {
   },
 
   async listConversations(onProgress) {
-    const data = await this.get("chat_session/fetch_page?count=500");
-    const sessions =
-      data?.data?.biz_data?.chat_sessions ||
-      data?.data?.chat_sessions ||
-      [];
+    const conversations = [];
+    const pageSize = 100;
+    let offset = 0;
 
-    const conversations = sessions.map((s) => ({
-      id: s.id || s.chat_session_id,
-      title: s.title || "Untitled",
-      create_time: s.inserted_at ? Date.parse(s.inserted_at) / 1000 : null,
-      update_time: s.updated_at ? Date.parse(s.updated_at) / 1000 : null,
-    }));
+    while (offset < 10000) {
+      const data = await this.get(
+        `chat_session/fetch_page?count=${pageSize}&offset=${offset}`
+      );
+      const sessions =
+        data?.data?.biz_data?.chat_sessions ||
+        data?.data?.chat_sessions ||
+        [];
 
-    onProgress?.({
-      phase: "listing",
-      current: conversations.length,
-      total: conversations.length,
-    });
+      if (!sessions.length) break;
+
+      conversations.push(
+        ...sessions.map((s) => ({
+          id: s.id || s.chat_session_id,
+          title: s.title || "Untitled",
+          create_time: s.inserted_at ? Date.parse(s.inserted_at) / 1000 : null,
+          update_time: s.updated_at ? Date.parse(s.updated_at) / 1000 : null,
+        }))
+      );
+
+      onProgress?.({
+        phase: "listing",
+        current: conversations.length,
+        total: conversations.length,
+      });
+
+      if (sessions.length < pageSize) break;
+      offset += sessions.length;
+    }
 
     return conversations;
   },

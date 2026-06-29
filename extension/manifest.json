@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Exporter",
-  "version": "1.7.2",
+  "version": "1.7.5",
   "description": "Export AI chat history to your computer as JSON, Markdown, PDF, and knowledge-base files. Fully local.",
   "permissions": ["activeTab", "storage", "alarms", "notifications"],
   "background": {
@@ -89,6 +89,7 @@
         "lib/api-deepseek.js",
         "lib/api-grok.js",
         "lib/platform.js",
+        "lib/feedback.js",
         "lib/formats.js",
         "lib/exporter.js",
         "content/content.js",

@@ -3,7 +3,17 @@ var AIExporter = AIExporter || {};
 
 AIExporter.parserClaude = {
   selectActiveLineage(messages, leafUuid) {
-    if (!leafUuid || !messages?.length) return messages || [];
+    if (!messages?.length) return [];
+    if (!leafUuid) {
+      const sorted = [...messages].sort((a, b) => {
+        const ta = Date.parse(a.updated_at || a.created_at || 0) || 0;
+        const tb = Date.parse(b.updated_at || b.created_at || 0) || 0;
+        return tb - ta;
+      });
+      const latest = sorted[0]?.uuid;
+      if (latest) return this.selectActiveLineage(messages, latest);
+      return messages;
+    }
     const byId = new Map(messages.map((m) => [m.uuid, m]));
     const lineage = new Set();
     let current = leafUuid;

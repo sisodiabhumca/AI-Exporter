@@ -43,8 +43,7 @@ AIExporter.apiCopilot = {
   },
 
   getConversationIdFromUrl() {
-    const m = location.pathname.match(/\/c\/([a-f0-9-]+)/i);
-    return m ? m[1] : `copilot-${Date.now()}`;
+    return AIExporter.platform.getConversationIdFromUrl();
   },
 
   async listConversations(onProgress) {

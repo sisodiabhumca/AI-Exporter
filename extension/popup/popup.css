@@ -231,3 +231,47 @@ footer .author a:hover {
 .hidden {
   display: none !important;
 }
+
+.feedback-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #eee;
+}
+
+.feedback-section textarea {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.feedback-section textarea:focus {
+  outline: none;
+  border-color: #10a37f;
+  box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.15);
+}
+
+.feedback-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  background: #fff;
+  color: #1a7f64;
+  border: 1px solid #b8e0d4;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feedback-btn:hover {
+  background: #f8fffc;
+}
+
+.status-error {
+  color: #b91c1c;
+}
