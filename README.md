@@ -10,7 +10,17 @@ Everything runs locally in your browser. Your chats never leave your machine.
 
 ![Extension popup — six platforms, formats, and scheduled exports](store-listing/screenshots/01-extension-popup.png)
 
-**Version 1.7.2** — Firefox AMO build, export panel fixes, Chrome Web Store listing updates.
+**Version 1.7.5** — export reliability fixes, in-extension feedback, Gemini & bulk-export improvements.  
+**Chrome Web Store:** v1.7.5 submitted — awaiting Google review. Install locally via **Load unpacked** (below) until approved.
+
+## What's new in v1.7.5
+
+- **Gemini export fixes** — corrected internal API (`batchexecute`) format, DOM fallback when API fails, guard against wrong chat attached during bulk export
+- **Exporter hardening** — export mutex, `export-errors.json` on partial failure, no empty ZIP, `lastExportTime` only updates on success
+- **Platform API fixes** — Grok init + pagination, DeepSeek pagination, Copilot real conversation IDs, ChatGPT session validation
+- **Report an issue** — feedback form in popup, export overlay, and in-chat panel opens a pre-filled [GitHub issue](https://github.com/sisodiabhumca/AI-Exporter/issues/new) (no chat content sent)
+- **Copilot scope** — popup limits bulk export to **Current conversation only**; use the in-page Export panel for selective export
+- **Platform-aware branding** — export files use the detected platform name (not hardcoded “ChatGPT”)
 
 ## What's new in v1.7.2
 
@@ -67,15 +77,16 @@ See [roadmap](docs/ROADMAP.md) for Phase 6 plan.
 | ChatGPT | [chatgpt.com](https://chatgpt.com) | ✅ Enterprise/Team | ✅ |
 | Claude | [claude.ai](https://claude.ai) | ✅ | ✅ |
 | Gemini | [gemini.google.com](https://gemini.google.com) | ✅ | ✅ |
-| Copilot | [copilot.microsoft.com](https://copilot.microsoft.com) | ✅ (DOM) | ✅ |
+| Copilot | [copilot.microsoft.com](https://copilot.microsoft.com) | ⚠️ Current chat (popup) | ✅ |
 | DeepSeek | [chat.deepseek.com](https://chat.deepseek.com) | ✅ | ✅ |
 | Grok | [grok.com](https://grok.com) | ✅ | ✅ |
 
-> **Note:** Copilot export uses DOM scraping and may be restricted in Microsoft Edge. It works in Chrome and Firefox.
+> **Note:** Copilot export uses DOM scraping and may be restricted in Microsoft Edge. It works in Chrome and Firefox. For Copilot, use **Current conversation only** in the popup, or the in-page Export panel for message selection.
 
 ## Features
 
 - **Six AI platforms** in one extension — auto-detects the site you're on
+- **Report issues in-app** — popup, export overlay, and panel link to GitHub feedback (no chat data included)
 - Works with **Enterprise / Team / Business** ChatGPT accounts
 - Uses your existing browser session — no API keys required
 - Exports **all conversations** with full pagination
@@ -150,7 +161,9 @@ Six platforms, format picker, semantic RAG chunking, and scheduled export option
 3. Click **Load unpacked** → select the `extension/` folder
 4. Pin **AI Exporter** to your toolbar
 
-Or install from the [Chrome Web Store](https://chrome.google.com/webstore) (once published) — see [PUBLISHING.md](PUBLISHING.md) and [store submit checklist](store-listing/SUBMIT-CHECKLIST.md).
+Or install from the [Chrome Web Store](https://chrome.google.com/webstore) once approved — v1.7.5 is under review. See [PUBLISHING.md](PUBLISHING.md) and [store submit checklist](store-listing/SUBMIT-CHECKLIST.md).
+
+**Local build (v1.7.5):** run `bash scripts/package-extension.sh` → upload `dist/ai-exporter-chrome-v1.7.5.zip` when resubmitting, or load `extension/` unpacked for testing.
 
 ### Firefox
 
@@ -167,6 +180,17 @@ See [Firefox submit checklist](store-listing/FIREFOX-SUBMIT-CHECKLIST.md).
 2. Click the **AI Exporter** icon → choose formats → **Export conversations**
 3. Or click **Export chat** on any conversation page → use the panel for selective export
 4. Optionally enable **recurring export** in the popup for scheduled backups
+5. If something fails, use **Report an issue** in the popup or panel — it opens GitHub with version and error details (no message content)
+
+## Report issues
+
+Found a bug or export error?
+
+1. Open the extension **popup** or in-chat **Export panel**
+2. Scroll to **Report an issue**, describe what happened
+3. Click **Submit feedback on GitHub** — opens a pre-filled issue on [AI-Exporter](https://github.com/sisodiabhumca/AI-Exporter/issues/new)
+
+No conversation text is included — only extension version, platform, page URL, and any error message.
 
 ## CLI tools
 
