@@ -83,16 +83,24 @@ AIExporter.ui = {
     btn.id = "ai-exporter-feedback";
     btn.type = "button";
     btn.textContent = "Report issue on GitHub";
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      AIExporter.feedback.openIssue({
+      btn.disabled = true;
+      const result = await AIExporter.feedback.openIssue({
         error: context.message || context.exportErrors?.[0]?.error,
+        userNotes: context.exportErrors?.length
+          ? `Export had ${context.failed} failure(s). First: ${context.exportErrors[0].title || "Untitled"} — ${context.exportErrors[0].error}`
+          : undefined,
         context: {
           failedCount: context.failed,
           platformLabel: AIExporter.platform?.label,
           url: location.href,
         },
       });
+      btn.disabled = false;
+      btn.textContent = result.copied
+        ? "Opened — paste from clipboard"
+        : "Opened GitHub — submit there";
     });
     this.overlay.querySelector("#ai-exporter-card").appendChild(btn);
   },
@@ -105,7 +113,12 @@ AIExporter.ui = {
   },
 
   done(message, context = {}) {
-    this.set(message, 100, "Click anywhere to close.");
+    const detail =
+      context.detail ||
+      (context.failed && context.exportErrors?.[0]
+        ? `${context.exportErrors[0].title || "Untitled"}: ${context.exportErrors[0].error}`
+        : "Click anywhere to close.");
+    this.set(message, 100, detail);
     this.barEl.style.background = "#22c55e";
     if (context.failed) this.addFeedbackButton({ ...context, message });
     this.finish();

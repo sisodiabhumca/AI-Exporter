@@ -323,6 +323,8 @@ AIExporter.panel = {
         AIExporter.feedback?.openIssue({
           error: this.statusEl?.textContent || undefined,
           context: { url: location.href },
+        }).then((result) => {
+          this.setStatus(result?.message || "Opened GitHub — submit your issue there.");
         });
       }
     });

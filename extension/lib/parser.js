@@ -69,20 +69,24 @@ AIExporter.parser = {
     return path;
   },
 
-  extractMessages(convo, options = {}) {
-    const panelMsgs = AIExporter.utils.panelMessages(convo, options);
-    if (panelMsgs) return panelMsgs;
+  nodeIdsByTime(mapping) {
+    return Object.keys(mapping)
+      .filter((id) => mapping[id]?.message)
+      .sort((a, b) => {
+        const ta = mapping[a]?.message?.create_time || 0;
+        const tb = mapping[b]?.message?.create_time || 0;
+        return ta - tb;
+      });
+  },
 
-    const mapping = this.normalizeMapping(convo.mapping);
-    const nodeIds = this.getLinearNodeIds(convo, mapping);
+  collectMessages(mapping, nodeIds, options = {}, selectedIds = null) {
     const messages = [];
-    const selectedIds = options.selectedMessageIds?.length
-      ? new Set(options.selectedMessageIds)
-      : null;
-
-    if (!nodeIds.length) return messages;
+    const seen = new Set();
 
     for (const nodeId of nodeIds) {
+      if (seen.has(nodeId)) continue;
+      seen.add(nodeId);
+
       const node = mapping[nodeId] || {};
       const msg = node.message;
       if (!msg?.content) continue;
@@ -148,6 +152,30 @@ AIExporter.parser = {
           });
         }
       }
+    }
+
+    return messages;
+  },
+
+  extractMessages(convo, options = {}) {
+    const panelMsgs = AIExporter.utils.panelMessages(convo, options);
+    if (panelMsgs) return panelMsgs;
+
+    const mapping = this.normalizeMapping(convo.mapping);
+    const selectedIds = options.selectedMessageIds?.length
+      ? new Set(options.selectedMessageIds)
+      : null;
+
+    const linearIds = this.getLinearNodeIds(convo, mapping);
+    let messages = this.collectMessages(mapping, linearIds, options, selectedIds);
+
+    if (!messages.length && Object.keys(mapping).length) {
+      messages = this.collectMessages(
+        mapping,
+        this.nodeIdsByTime(mapping),
+        options,
+        selectedIds
+      );
     }
 
     return messages;

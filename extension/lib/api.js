@@ -4,7 +4,7 @@ var AIExporter = AIExporter || {};
 AIExporter.api = {
   API_BASE: "/backend-api",
   PAGE_SIZE: 100,
-  DELAY_MS: 400,
+  DELAY_MS: 600,
 
   deviceId: null,
   token: null,
@@ -106,7 +106,7 @@ AIExporter.api = {
     };
   },
 
-  async get(path, retries = 3) {
+  async get(path, retries = 5) {
     let lastError;
     for (let attempt = 0; attempt < retries; attempt += 1) {
       try {
@@ -114,7 +114,11 @@ AIExporter.api = {
           headers: this.headers,
         });
         if (resp.status === 429) {
-          await AIExporter.utils.sleep(1000 * (attempt + 1));
+          const retryAfter = Number.parseInt(resp.headers.get("Retry-After") || "0", 10);
+          const waitMs = retryAfter > 0
+            ? retryAfter * 1000
+            : Math.min(30000, 2000 * 2 ** attempt);
+          await AIExporter.utils.sleep(waitMs);
           continue;
         }
         if (!resp.ok) {

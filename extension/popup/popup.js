@@ -1,7 +1,5 @@
 const ext = typeof globalThis.browser !== "undefined" ? globalThis.browser : globalThis.chrome;
 
-const ISSUES_URL = "https://github.com/sisodiabhumca/AI-Exporter/issues/new";
-
 const PLATFORMS = {
   chatgpt: { hosts: ["chatgpt.com", "chat.openai.com"], label: "ChatGPT", url: "https://chatgpt.com" },
   claude: { hosts: ["claude.ai"], label: "Claude", url: "https://claude.ai" },
@@ -27,44 +25,6 @@ const feedbackSteps = document.getElementById("feedback-steps");
 const feedbackBtn = document.getElementById("feedback-btn");
 
 let currentPlatform = null;
-
-function getExtensionVersion() {
-  try {
-    return ext.runtime.getManifest().version;
-  } catch {
-    return "unknown";
-  }
-}
-
-function buildFeedbackBody({ error, userNotes, steps, platformLabel, url, failedCount } = {}) {
-  return [
-    "## What happened",
-    userNotes || error || "(please describe the issue)",
-    "",
-    "## Steps to reproduce",
-    steps || "1. Open AI chat site\n2. Click Export\n3. ",
-    "",
-    "## Environment",
-    `- Extension version: ${getExtensionVersion()}`,
-    `- Platform: ${platformLabel || "unknown"}`,
-    `- Page URL: ${url || "n/a"}`,
-    error ? `- Error message: ${error}` : "",
-    failedCount != null ? `- Failed conversations: ${failedCount}` : "",
-    "",
-    "---",
-    "Submitted via AI Exporter popup feedback (no chat content included).",
-  ]
-    .filter((line) => line !== undefined)
-    .join("\n");
-}
-
-function openFeedbackIssue(opts = {}) {
-  const title = encodeURIComponent(
-    opts.title || `[Bug] ${opts.platformLabel || "AI Exporter"} — export issue`
-  );
-  const body = encodeURIComponent(buildFeedbackBody(opts));
-  ext.tabs.create({ url: `${ISSUES_URL}?title=${title}&body=${body}` });
-}
 
 function prefillFeedback(errorText) {
   if (!errorText || feedbackNotes.value.trim()) return;
@@ -330,12 +290,20 @@ exportBtn.addEventListener("click", async () => {
 
 feedbackBtn?.addEventListener("click", async () => {
   const tab = await getActiveTab();
-  openFeedbackIssue({
-    userNotes: feedbackNotes?.value.trim(),
-    steps: feedbackSteps?.value.trim(),
-    platformLabel: currentPlatform?.label,
-    url: tab?.url,
-  });
+  try {
+    const result = await AIExporter.feedback.openIssue({
+      userNotes: feedbackNotes?.value.trim(),
+      steps: feedbackSteps?.value.trim(),
+      platformLabel: currentPlatform?.label,
+      url: tab?.url,
+    });
+    statusEl.textContent = result.message;
+    statusEl.classList.remove("hidden", "status-error");
+  } catch (err) {
+    statusEl.textContent = err?.message || "Could not open GitHub. Try again or visit the repo issues page.";
+    statusEl.classList.add("status-error");
+    statusEl.classList.remove("hidden");
+  }
 });
 
 init();

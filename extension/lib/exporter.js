@@ -559,6 +559,101 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
     return Promise.resolve(filtered);
   },
 
+  isRetryableExportError(err) {
+    const msg = err?.message || String(err || "");
+    return (
+      /HTTP 429|rate limit|too many requests/i.test(msg) ||
+      /HTTP 5\d\d/.test(msg) ||
+      /network|failed to fetch|load failed/i.test(msg)
+    );
+  },
+
+  downloadConcurrency(total) {
+    if (AIExporter.platform.id === "chatgpt") {
+      if (total > 80) return 1;
+      if (total > 30) return 2;
+      return 2;
+    }
+    return 3;
+  },
+
+  downloadDelayMs() {
+    if (AIExporter.platform.id === "chatgpt") return 700;
+    return this.api().DELAY_MS;
+  },
+
+  async downloadOneConversation(item, opts) {
+    const { id, title: rawTitle } = item;
+    const title = rawTitle || "Untitled";
+
+    let convo = await this.api().getConversation(id);
+    convo = this.attachListMetadata(convo, item);
+    if (!convo.title && title !== id.slice(0, 8)) convo.title = title;
+
+    const summary = this.parser().toConversationSummary(
+      this.prepareConvo(convo, opts),
+      this.formatOptions(opts)
+    );
+    if (!summary.messages?.length) {
+      throw new Error("No messages found in conversation");
+    }
+
+    const fname = this.buildFname(convo, opts);
+    const result = await this.processConversation(convo, opts, fname);
+    return { convo, fname, result, title, id };
+  },
+
+  async retryFailedDownloads(filtered, exportErrors, opts, zipEntries, htmlEntries, fullConversations, ui) {
+    const retryable = exportErrors.filter((entry) =>
+      this.isRetryableExportError({ message: entry.error })
+    );
+    if (!retryable.length || ui.isCancelled()) return 0;
+
+    ui.set(
+      `Retrying ${retryable.length} chat${retryable.length === 1 ? "" : "s"} after rate limits...`,
+      84
+    );
+
+    let recovered = 0;
+    const byId = new Map(filtered.map((item) => [item.id, item]));
+
+    for (let i = 0; i < retryable.length; i += 1) {
+      if (ui.isCancelled()) break;
+
+      const entry = retryable[i];
+      const item = byId.get(entry.id);
+      if (!item) continue;
+
+      ui.set(
+        `Retrying ${i + 1} of ${retryable.length} after rate limits...`,
+        84,
+        entry.title || entry.id
+      );
+      await AIExporter.utils.sleep(2500);
+
+      try {
+        const downloaded = await this.downloadOneConversation(item, opts);
+        fullConversations.push(downloaded.convo);
+        zipEntries.push(...downloaded.result.zipEntries);
+        if (downloaded.result.htmlBody) {
+          htmlEntries.push({
+            title: downloaded.result.title,
+            html: downloaded.result.htmlBody,
+            fname: downloaded.fname,
+          });
+        }
+
+        const idx = exportErrors.findIndex((e) => e.id === entry.id);
+        if (idx >= 0) exportErrors.splice(idx, 1);
+        recovered += 1;
+      } catch {
+        // keep original error entry
+      }
+    }
+
+    return recovered;
+  },
+
   async run(options = {}) {
     if (this.exportInProgress) {
       throw new Error("An export is already in progress. Wait for it to finish.");
@@ -634,33 +729,25 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
         : "";
       ui.set(`Downloading ${total} chat${total === 1 ? "" : "s"}...${selectionNote}`, 15);
 
+      const concurrency = this.downloadConcurrency(total);
+      const delayMs = this.downloadDelayMs();
       let completed = 0;
-      await AIExporter.utils.mapPool(filtered, 3, async (item) => {
+      await AIExporter.utils.mapPool(filtered, concurrency, async (item) => {
         if (ui.isCancelled()) return;
 
         const { id, title: rawTitle } = item;
         const title = rawTitle || "Untitled";
 
         try {
-          let convo = await this.api().getConversation(id);
-          convo = this.attachListMetadata(convo, item);
-          if (!convo.title && title !== id.slice(0, 8)) convo.title = title;
-
-          const summary = this.parser().toConversationSummary(
-            this.prepareConvo(convo, opts),
-            this.formatOptions(opts)
-          );
-          if (!summary.messages?.length) {
-            throw new Error("No messages found in conversation");
-          }
-
-          fullConversations.push(convo);
-          const fname = this.buildFname(convo, opts);
-          const result = await this.processConversation(convo, opts, fname);
-          zipEntries.push(...result.zipEntries);
-
-          if (result.htmlBody) {
-            htmlEntries.push({ title: result.title, html: result.htmlBody, fname });
+          const downloaded = await this.downloadOneConversation(item, opts);
+          fullConversations.push(downloaded.convo);
+          zipEntries.push(...downloaded.result.zipEntries);
+          if (downloaded.result.htmlBody) {
+            htmlEntries.push({
+              title: downloaded.result.title,
+              html: downloaded.result.htmlBody,
+              fname: downloaded.fname,
+            });
           }
         } catch (err) {
           failed += 1;
@@ -675,8 +762,21 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
         completed += 1;
         const pct = 15 + Math.round((completed / total) * 70);
         ui.set(`Downloading ${completed} of ${total}`, pct, title);
-        await AIExporter.utils.sleep(this.api().DELAY_MS);
+        await AIExporter.utils.sleep(delayMs);
       });
+
+      if (!ui.isCancelled() && exportErrors.length) {
+        const recovered = await this.retryFailedDownloads(
+          filtered,
+          exportErrors,
+          opts,
+          zipEntries,
+          htmlEntries,
+          fullConversations,
+          ui
+        );
+        failed = Math.max(0, failed - recovered);
+      }
 
       if (ui.isCancelled()) throw new Error("Cancelled");
 
@@ -786,7 +886,9 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
       });
 
       let msg = `Done! Exported ${succeeded} conversation${succeeded === 1 ? "" : "s"}.`;
-      if (failed) msg += ` (${failed} failed)`;
+      if (failed) {
+        msg += ` (${failed} failed — see export-errors.json in the ZIP)`;
+      }
       ui.done(msg, { failed, exportErrors });
 
       return { success: true, count: succeeded, failed, errors: exportErrors };
