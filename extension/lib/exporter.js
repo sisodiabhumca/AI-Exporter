@@ -71,6 +71,155 @@ AIExporter.exporter = {
     return convo;
   },
 
+  attachListMetadata(convo, item) {
+    if (item.project_name) {
+      convo.project_name = item.project_name;
+      convo.gizmo_id = item.gizmo_id;
+      convo.list_source = item.list_source || "project";
+      convo._aiExporterPathPrefix = `projects/${AIExporter.utils.sanitizeFilename(item.project_name)}/`;
+
+      const project = AIExporter.platform.id === "chatgpt"
+        ? this.api().lastProjectDetails?.find((p) => p.id === item.gizmo_id)
+        : null;
+      if (project?.instructions) {
+        convo.project_instructions = project.instructions;
+      }
+    } else if (item.list_source) {
+      convo.list_source = item.list_source;
+    }
+    if (!convo.create_time && item.create_time) convo.create_time = item.create_time;
+    if (!convo.update_time && item.update_time) convo.update_time = item.update_time;
+    return convo;
+  },
+
+  async appendChatGptProjectAssets(zipEntries, ui) {
+    if (AIExporter.platform.id !== "chatgpt") {
+      return { knowledgeFiles: 0, errors: [] };
+    }
+
+    const api = this.api();
+    const projects = api.lastProjectDetails || [];
+    if (!projects.length) return { knowledgeFiles: 0, errors: [] };
+
+    const errors = [];
+    let knowledgeFiles = 0;
+
+    for (const project of projects) {
+      const slug = AIExporter.utils.sanitizeFilename(project.name);
+      const prefix = `projects/${slug}/`;
+
+      ui?.set?.(
+        this.formatListProgress({
+          phase: "listing-project-assets",
+          project: project.name,
+        }),
+        86,
+        project.name
+      );
+
+      zipEntries.push({
+        path: `${prefix}project.json`,
+        data: JSON.stringify(api.sanitizeGizmoForExport(project), null, 2),
+      });
+
+      if (project.instructions) {
+        zipEntries.push({
+          path: `${prefix}custom-instructions.txt`,
+          data: project.instructions,
+        });
+        zipEntries.push({
+          path: `${prefix}instructions.md`,
+          data: `# ${project.name} — Project instructions\n\n${project.instructions}\n`,
+        });
+      }
+
+      const manifestFiles = [];
+      const usedNames = new Set();
+
+      for (const file of project.files || []) {
+        try {
+          const { filename, data } = await api.downloadProjectKnowledgeFile(
+            file.id,
+            file.name
+          );
+          const actualName = AIExporter.utils.deduplicateFilename(
+            filename || file.name || file.id,
+            usedNames
+          );
+          zipEntries.push({
+            path: `${prefix}knowledge-files/${actualName}`,
+            data,
+          });
+          manifestFiles.push({
+            id: file.id,
+            filename: actualName,
+            original_name: file.name,
+            type: file.type,
+            size: file.size,
+          });
+          knowledgeFiles += 1;
+          await AIExporter.utils.sleep(api.DELAY_MS);
+        } catch (err) {
+          errors.push({
+            project_id: project.id,
+            project_name: project.name,
+            file_id: file.id,
+            filename: file.name,
+            error: err?.message || String(err),
+          });
+        }
+      }
+
+      if (manifestFiles.length || errors.some((e) => e.project_id === project.id)) {
+        zipEntries.push({
+          path: `${prefix}knowledge-manifest.json`,
+          data: JSON.stringify(
+            {
+              project_id: project.id,
+              project_name: project.name,
+              exported_at: new Date().toISOString(),
+              files: manifestFiles,
+              errors: errors.filter((e) => e.project_id === project.id),
+            },
+            null,
+            2
+          ),
+        });
+      }
+    }
+
+    if (errors.length) {
+      zipEntries.push({
+        path: "chatgpt/project-knowledge-errors.json",
+        data: JSON.stringify(
+          {
+            exported_at: new Date().toISOString(),
+            errors,
+          },
+          null,
+          2
+        ),
+      });
+    }
+
+    return { knowledgeFiles, errors };
+  },
+
+  formatListProgress(progress) {
+    if (AIExporter.platform.id === "chatgpt" && AIExporter.api.formatListProgressMessage) {
+      return AIExporter.api.formatListProgressMessage(progress);
+    }
+    if (progress?.current != null && progress?.total) {
+      return `Fetching conversation list... ${progress.current}/${progress.total}`;
+    }
+    return "Fetching conversation list...";
+  },
+
+  listProgressPercent(progress) {
+    if (!progress?.total) return 5;
+    return Math.min(15, Math.round((progress.current / progress.total) * 15));
+  },
+
   formatOptions(options) {
     return {
       selectedMessageIds: options.selectedMessageIds,
@@ -80,12 +229,13 @@ AIExporter.exporter = {
     };
   },
 
-  async processConversation(convo, options, fname) {
+  async processConversation(convo, options, fname, pathPrefix = "") {
     const zipEntries = [];
     const fileMap = {};
     const fileDownloadFailures = [];
     const prepared = this.prepareConvo(convo, options);
     const fmtOpts = this.formatOptions(options);
+    const prefix = pathPrefix || convo._aiExporterPathPrefix || "";
 
     if (options.includeFiles && AIExporter.platform.id === "chatgpt") {
       const fileRefs = AIExporter.parser.extractFileReferences(prepared);
@@ -101,7 +251,7 @@ AIExporter.exporter = {
             dlName || ref.filename,
             usedNames
           );
-          zipEntries.push({ path: `files/${fname}/${actualName}`, data });
+          zipEntries.push({ path: `${prefix}files/${fname}/${actualName}`, data });
           fileMap[ref.fileId] = `../files/${fname}/${actualName}`;
           await AIExporter.utils.sleep(this.api().DELAY_MS);
         } catch (err) {
@@ -115,7 +265,7 @@ AIExporter.exporter = {
 
       if (fileDownloadFailures.length) {
         zipEntries.push({
-          path: `files/${fname}/_download-warnings.json`,
+          path: `${prefix}files/${fname}/_download-warnings.json`,
           data: JSON.stringify(fileDownloadFailures, null, 2),
         });
       }
@@ -123,35 +273,35 @@ AIExporter.exporter = {
 
     if (options.formats.includes("raw")) {
       zipEntries.push({
-        path: `raw/${fname}.json`,
+        path: `${prefix}raw/${fname}.json`,
         data: JSON.stringify(prepared, null, 2),
       });
     }
 
     if (options.formats.includes("markdown")) {
       zipEntries.push({
-        path: `markdown/${fname}.md`,
+        path: `${prefix}markdown/${fname}.md`,
         data: AIExporter.formats.markdown(prepared, fileMap, fmtOpts),
       });
     }
 
     if (options.formats.includes("html")) {
       zipEntries.push({
-        path: `html/${fname}.html`,
+        path: `${prefix}html/${fname}.html`,
         data: AIExporter.formats.html(prepared, fileMap, fmtOpts),
       });
     }
 
     if (options.formats.includes("notion")) {
       zipEntries.push({
-        path: `notion/${fname}.md`,
+        path: `${prefix}notion/${fname}.md`,
         data: AIExporter.formats.notion(prepared, fileMap, fmtOpts),
       });
     }
 
     if (options.formats.includes("obsidian")) {
       zipEntries.push({
-        path: `obsidian/${fname}.md`,
+        path: `${prefix}obsidian/${fname}.md`,
         data: AIExporter.formats.obsidian(prepared, fileMap, fmtOpts),
       });
     }
@@ -159,7 +309,7 @@ AIExporter.exporter = {
     if (options.formats.includes("csv")) {
       const summary = this.parser().toConversationSummary(prepared, fmtOpts);
       zipEntries.push({
-        path: `csv/${fname}.csv`,
+        path: `${prefix}csv/${fname}.csv`,
         data: AIExporter.formats.csvRowsForSummary(summary),
       });
     }
@@ -167,7 +317,7 @@ AIExporter.exporter = {
     if (options.formats.includes("claude")) {
       const summary = this.parser().toConversationSummary(prepared, fmtOpts);
       zipEntries.push({
-        path: `claude/${fname}.json`,
+        path: `${prefix}claude/${fname}.json`,
         data: JSON.stringify(
           {
             title: summary.title,
@@ -207,7 +357,7 @@ AIExporter.exporter = {
       const geminiFiles = AIExporter.formats.geminiImportFiles(prepared);
       for (const file of geminiFiles) {
         zipEntries.push({
-          path: `gemini-import/${file.path}`,
+          path: `${prefix}gemini-import/${file.path}`,
           data: file.content,
         });
       }
@@ -447,12 +597,23 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
         list = opts.conversationIds.map((id) => ({ id, title: id.slice(0, 8) }));
       } else {
         list = await this.api().listConversations((progress) => {
-          const pct = Math.round((progress.current / progress.total) * 15);
-          ui.set(
-            `Fetching conversation list... ${progress.current}/${progress.total}`,
-            pct
-          );
+          ui.set(this.formatListProgress(progress), this.listProgressPercent(progress));
         });
+
+        if (
+          AIExporter.platform.id === "chatgpt" &&
+          this.api().lastListStats?.total_unique
+        ) {
+          const stats = this.api().lastListStats;
+          const projectNote =
+            stats.project_count > 0
+              ? ` (${stats.project_count} project${stats.project_count === 1 ? "" : "s"}, ${stats.project_only_count} project-only chat${stats.project_only_count === 1 ? "" : "s"})`
+              : "";
+          ui.set(
+            `Found ${stats.total_unique} conversations${projectNote}`,
+            15
+          );
+        }
       }
 
       if (!list.length) {
@@ -482,6 +643,7 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
 
         try {
           let convo = await this.api().getConversation(id);
+          convo = this.attachListMetadata(convo, item);
           if (!convo.title && title !== id.slice(0, 8)) convo.title = title;
 
           const summary = this.parser().toConversationSummary(
@@ -505,6 +667,7 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
           exportErrors.push({
             id,
             title,
+            project_name: item.project_name || null,
             error: err?.message || String(err),
           });
         }
@@ -526,7 +689,34 @@ node tools/prepare-rag-jsonl.mjs your-export.zip --chunk-size 1500
       }
 
       ui.set("Building export files...", 88);
+
+      if (AIExporter.platform.id === "chatgpt") {
+        const assetResult = await this.appendChatGptProjectAssets(zipEntries, ui);
+        if (this.api().lastListStats) {
+          this.api().lastListStats.knowledge_files_exported = assetResult.knowledgeFiles;
+          this.api().lastListStats.knowledge_file_errors = assetResult.errors.length;
+        }
+      }
+
       this.appendAggregateFormats(zipEntries, fullConversations, opts, htmlEntries);
+
+      if (
+        AIExporter.platform.id === "chatgpt" &&
+        this.api().lastListStats
+      ) {
+        zipEntries.push({
+          path: "chatgpt/export-index.json",
+          data: JSON.stringify(
+            {
+              exported_at: new Date().toISOString(),
+              exporter_version: AIExporter.feedback.getVersion(),
+              ...this.api().lastListStats,
+            },
+            null,
+            2
+          ),
+        });
+      }
 
       if (opts.complianceManifest) {
         ui.set("Generating compliance manifest...", 92);

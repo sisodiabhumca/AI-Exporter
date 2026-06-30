@@ -1,18 +1,18 @@
 # Firefox Add-ons (AMO) — Submit Checklist
 
-**Extension:** AI Exporter v1.7.2  
+**Extension:** AI Exporter v1.7.7  
 **Contact:** sisodiabhumca@gmail.com  
 **Source:** https://github.com/sisodiabhumca/AI-Exporter
 
 ---
 
-## 1. Package (use v1.7.2+)
+## 1. Package (use v1.7.7+)
 
 ```bash
 bash scripts/package-extension.sh
 ```
 
-Upload: **`dist/ai-exporter-firefox-v1.7.2.zip`** only — not the Chrome zip.
+Upload: **`dist/ai-exporter-firefox-v1.7.7.zip`** only — not the Chrome zip.
 
 The Firefox package uses **`background.scripts` only** (no `service_worker`). Chrome zip keeps `service_worker` only.
 
@@ -120,7 +120,7 @@ Extension source lives in the extension/ folder.
 Build (optional, for reviewers):
   git clone https://github.com/sisodiabhumca/AI-Exporter.git
   bash scripts/package-extension.sh
-  → dist/ai-exporter-firefox-v1.7.2.zip
+  → dist/ai-exporter-firefox-v1.7.7.zip
 
 The only build step is zipping extension/ and setting background.scripts
 in manifest.json for Firefox (no JS compilation or minification).

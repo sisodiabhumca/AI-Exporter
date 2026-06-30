@@ -10,8 +10,20 @@ Everything runs locally in your browser. Your chats never leave your machine.
 
 ![Extension popup — six platforms, formats, and scheduled exports](store-listing/screenshots/01-extension-popup.png)
 
-**Version 1.7.5** — export reliability fixes, in-extension feedback, Gemini & bulk-export improvements.  
-**Chrome Web Store:** v1.7.5 submitted — awaiting Google review. Install locally via **Load unpacked** (below) until approved.
+**Version 1.7.7** — full ChatGPT export: all conversations, Projects, knowledge files, and custom instructions.  
+**Chrome Web Store:** awaiting Google review. Install locally via **Load unpacked** (below) until approved.
+
+## What's new in v1.7.7
+
+- **ChatGPT Project knowledge files** — PDFs and docs uploaded to a Project export to `projects/{Name}/knowledge-files/`
+- **Project custom instructions** — saved as `custom-instructions.txt` and `instructions.md` per Project
+- **`project.json` + `knowledge-manifest.json`** — metadata and download index for each Project folder
+
+## What's new in v1.7.6
+
+- **ChatGPT Projects export** — discovers Projects via ChatGPT API, lists project conversations (cursor pagination), merges with main history, deduplicates by ID
+- **Project folders in ZIP** — chats from a Project are saved under `projects/{Project Name}/` (markdown, json, etc.)
+- **`chatgpt/export-index.json`** — summary of main vs project conversation counts in each export
 
 ## What's new in v1.7.5
 
@@ -74,7 +86,7 @@ See [roadmap](docs/ROADMAP.md) for Phase 6 plan.
 
 | Platform | URL | Bulk export | Selective panel |
 |----------|-----|-------------|-------------------|
-| ChatGPT | [chatgpt.com](https://chatgpt.com) | ✅ Enterprise/Team | ✅ |
+| ChatGPT | [chatgpt.com](https://chatgpt.com) | ✅ All + Projects | ✅ |
 | Claude | [claude.ai](https://claude.ai) | ✅ | ✅ |
 | Gemini | [gemini.google.com](https://gemini.google.com) | ✅ | ✅ |
 | Copilot | [copilot.microsoft.com](https://copilot.microsoft.com) | ⚠️ Current chat (popup) | ✅ |
@@ -89,7 +101,7 @@ See [roadmap](docs/ROADMAP.md) for Phase 6 plan.
 - **Report issues in-app** — popup, export overlay, and panel link to GitHub feedback (no chat data included)
 - Works with **Enterprise / Team / Business** ChatGPT accounts
 - Uses your existing browser session — no API keys required
-- Exports **all conversations** with full pagination
+- Exports **all ChatGPT conversations** — main history, Project chats, **custom instructions**, and **uploaded knowledge files** (PDFs/docs)
 - **Single-chat export** via floating button on any conversation page
 - **Claude Project** format — upload-ready knowledge files
 - **Gemini Import** format — paste-ready for gemini.google.com
@@ -105,7 +117,7 @@ See [roadmap](docs/ROADMAP.md) for Phase 6 plan.
 
 ### Extension popup
 
-Six platforms, format picker, semantic RAG chunking, and scheduled export options.
+Formats, scheduled exports, GitHub feedback, and ChatGPT Project bulk export.
 
 ![Extension popup](store-listing/screenshots/01-extension-popup.png)
 
@@ -114,14 +126,20 @@ Six platforms, format picker, semantic RAG chunking, and scheduled export option
 | Floating export button | Selective export panel |
 |------------------------|------------------------|
 | ![Floating export button on any AI chat page](store-listing/screenshots/02-floating-export-button.png) | ![Selective export panel with format picker](store-listing/screenshots/05-export-panel.png) |
-| One-click export on any supported platform | Pick messages, formats, copy or download ZIP |
+| One-click export on any supported platform | Pick messages, formats, copy, download, or report issues |
 
 ### Export progress & output
 
 | Real-time progress | ZIP folder structure |
 |--------------------|----------------------|
 | ![Export progress overlay](store-listing/screenshots/03-export-progress.png) | ![Export formats in one ZIP](store-listing/screenshots/04-export-formats.png) |
-| Live status while conversations download | Universal JSON, RAG JSONL, Notion, compliance, and more |
+| Discovers Projects, downloads chats and knowledge files | `projects/{Name}/` with instructions, files, and chats |
+
+### ChatGPT Projects
+
+Full export of Project chats, custom instructions, and uploaded knowledge files (PDFs, docs).
+
+![ChatGPT Projects export structure](store-listing/screenshots/docs/chatgpt-projects.png)
 
 ### Cross-AI migration
 
@@ -151,6 +169,7 @@ Six platforms, format picker, semantic RAG chunking, and scheduled export option
 | **Raw JSON** | `raw/*.json` | Full platform data with metadata |
 | **Compliance** | `compliance/manifest.json` + `audit-log.csv` | SHA-256 audit manifest (optional) |
 | **RAG JSONL** | `rag/chunks.jsonl` | Embedding pipelines — turn-pair, message, or semantic |
+| **ChatGPT Projects** | `projects/{Name}/` | Project chats, instructions, knowledge files, manifests |
 
 ## Install
 
@@ -161,9 +180,9 @@ Six platforms, format picker, semantic RAG chunking, and scheduled export option
 3. Click **Load unpacked** → select the `extension/` folder
 4. Pin **AI Exporter** to your toolbar
 
-Or install from the [Chrome Web Store](https://chrome.google.com/webstore) once approved — v1.7.5 is under review. See [PUBLISHING.md](PUBLISHING.md) and [store submit checklist](store-listing/SUBMIT-CHECKLIST.md).
+Or install from the [Chrome Web Store](https://chrome.google.com/webstore) once approved. See [PUBLISHING.md](PUBLISHING.md) and [store submit checklist](store-listing/SUBMIT-CHECKLIST.md).
 
-**Local build (v1.7.5):** run `bash scripts/package-extension.sh` → upload `dist/ai-exporter-chrome-v1.7.5.zip` when resubmitting, or load `extension/` unpacked for testing.
+**Local build (v1.7.7):** run `bash scripts/package-extension.sh` → `dist/ai-exporter-chrome-v1.7.7.zip`, or load `extension/` unpacked for testing.
 
 ### Firefox
 
@@ -223,6 +242,27 @@ See [tools/README.md](tools/README.md) and [docs/USER_GUIDE.md](docs/USER_GUIDE.
 ## Enterprise / Team accounts
 
 Automatically detects workspace account ID via `ChatGPT-Account-Id` header. No extra configuration.
+
+### ChatGPT Projects
+
+**All conversations** export includes:
+
+- Main sidebar chat history (`/backend-api/conversations`)
+- Chats inside each ChatGPT Project (`/backend-api/gizmos/{id}/conversations`)
+- Deduplication by conversation ID
+- Project chats saved under `projects/{Project Name}/` in the ZIP
+
+**Also exported per Project:**
+
+| Path | Contents |
+|------|----------|
+| `projects/{Name}/custom-instructions.txt` | Project custom instructions (plain text) |
+| `projects/{Name}/instructions.md` | Same instructions in Markdown |
+| `projects/{Name}/knowledge-files/` | Uploaded PDFs, docs, and other Project knowledge files |
+| `projects/{Name}/knowledge-manifest.json` | Index of downloaded knowledge files |
+| `projects/{Name}/project.json` | Project metadata summary |
+
+Failed knowledge file downloads are listed in `chatgpt/project-knowledge-errors.json`.
 
 ## Privacy
 

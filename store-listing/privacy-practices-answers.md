@@ -1,6 +1,6 @@
 # Chrome Web Store — Privacy Practices (copy-paste)
 
-**Extension:** AI Exporter v1.7.2  
+**Extension:** AI Exporter v1.7.7  
 **Author:** Gaurav Sisodia ([@sisodiabhumca](https://github.com/sisodiabhumca))  
 **Contact email:** sisodiabhumca@gmail.com
 
@@ -112,7 +112,7 @@ https://github.com/sisodiabhumca/AI-Exporter/blob/main/store-listing/privacy-pol
 - [ ] storage justification entered
 - [ ] Data usage compliance certified (**Yes**)
 - [ ] Privacy policy URL added (GitHub repo must be public)
-- [ ] Extension ZIP uploaded (`dist/ai-exporter-chrome-v1.7.2.zip`)
+- [ ] Extension ZIP uploaded (`dist/ai-exporter-chrome-v1.7.7.zip`)
 - [ ] Store icon uploaded (`store-listing/icon-128.png`)
 - [ ] Screenshots uploaded (7 images)
 - [ ] **Save Draft** clicked

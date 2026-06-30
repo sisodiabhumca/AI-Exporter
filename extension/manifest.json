@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Exporter",
-  "version": "1.7.5",
+  "version": "1.7.7",
   "description": "Export AI chat history to your computer as JSON, Markdown, PDF, and knowledge-base files. Fully local.",
   "permissions": ["activeTab", "storage", "alarms", "notifications"],
   "background": {

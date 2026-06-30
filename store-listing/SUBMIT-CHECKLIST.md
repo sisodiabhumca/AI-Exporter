@@ -1,6 +1,6 @@
 # Chrome Web Store — Submit Checklist
 
-**Item:** AI Exporter v1.7.2  
+**Item:** AI Exporter v1.7.7  
 **Publisher:** Gaurav Sisodia  
 **Contact email:** sisodiabhumca@gmail.com  
 **GitHub:** [github.com/sisodiabhumca/AI-Exporter](https://github.com/sisodiabhumca/AI-Exporter)
@@ -205,7 +205,7 @@ Check **Yes** — I certify that my data usage complies with the Developer Progr
 bash scripts/package-extension.sh
 ```
 
-Upload: `dist/ai-exporter-chrome-v1.7.2.zip`
+Upload: `dist/ai-exporter-chrome-v1.7.7.zip`
 
 | Package | Use for |
 |---------|---------|
@@ -227,7 +227,7 @@ bash scripts/package-extension.sh
 If the extension is **already in review** or **published**:
 
 1. Developer Dashboard → **AI Exporter** → **Package** → **Upload new package**
-2. Upload latest `dist/ai-exporter-chrome-v1.7.2.zip`
+2. Upload latest `dist/ai-exporter-chrome-v1.7.7.zip`
 3. Update **Store listing** / **Privacy** if permissions or platforms changed
 4. **Save Draft** → **Submit for review** (or publish update when approved)
 
@@ -250,7 +250,7 @@ Click **Save Draft**, fix any warnings at the top of the page, then **Submit for
 - [ ] Remote code: **No**
 - [ ] Data usage compliance certified (**Yes**)
 - [ ] Privacy policy URL live on GitHub
-- [ ] Chrome ZIP uploaded (`dist/ai-exporter-chrome-v1.7.2.zip`)
+- [ ] Chrome ZIP uploaded (`dist/ai-exporter-chrome-v1.7.7.zip`)
 - [ ] Icon + **small promo tile** (440×280) + **marquee promo tile** (1400×560) + **5** screenshots uploaded
 - [ ] **Save Draft** clicked
 - [ ] Submit for review (only after warnings cleared)
@@ -281,7 +281,7 @@ Google’s explicit example: *“a long list of the different sites on which the
 
 ---
 
-## Supported platforms (v1.7.2)
+## Supported platforms (v1.7.7)
 
 | Platform | Domain |
 |----------|--------|

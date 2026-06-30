@@ -90,7 +90,7 @@ def shot_promo_marquee():
     draw.text((72, 214), "JSON · Markdown · PDF · RAG · Notion · Obsidian", fill=(210, 240, 232), font=font(22))
 
     bullets = [
-        "Works on major AI chat websites",
+        "ChatGPT Projects — chats, instructions & files",
         "Bulk export or selective message picker",
         "100% local — no cloud upload",
     ]
@@ -121,33 +121,32 @@ def shot_promo_marquee():
 
 
 def shot_popup():
-    img, draw = base_canvas("Extension Popup", "Formats, RAG chunking, and scheduled exports")
-    panel = (300, 150, 680, 720)
+    img, draw = base_canvas("Extension Popup", "Formats, scheduled exports, and in-app feedback")
+    panel = (300, 130, 680, 740)
     rounded_rect(draw, panel, WHITE, outline=BORDER)
     draw.rectangle((panel[0], panel[1], panel[2], panel[1] + 76), fill=GREEN)
     draw.text((panel[0] + 20, panel[1] + 14), "AI Exporter", fill=WHITE, font=font(20, True))
-    draw.text((panel[0] + 20, panel[1] + 44), "Export from supported AI chat sites", fill=(220, 245, 238), font=font(11))
+    draw.text((panel[0] + 20, panel[1] + 44), "Export ChatGPT · all chats + Projects", fill=(220, 245, 238), font=font(11))
 
-    y = panel[1] + 92
+    y = panel[1] + 88
     for label in ["All conversations", "Current conversation only", "New since last export"]:
         rounded_rect(draw, (panel[0] + 16, y, panel[0] + 32, y + 14), GREEN if "All" in label else BORDER)
-        draw.text((panel[0] + 42, y - 2), label, fill=TEXT, font=font(13))
-        y += 30
-
-    y += 8
-    draw.text((panel[0] + 16, y), "FORMATS", fill=MUTED, font=font(10, True))
-    y += 20
-    for label in ["Universal JSON", "RAG JSONL", "Project import", "Knowledge-base MD"]:
-        draw.text((panel[0] + 16, y), f"☑ {label}", fill=TEXT, font=font(12))
-        y += 24
+        draw.text((panel[0] + 42, y - 2), label, fill=TEXT, font=font(12))
+        y += 26
 
     y += 4
-    draw.text((panel[0] + 16, y), "RAG chunking: Semantic (headings)", fill=MUTED, font=font(11))
-    y += 22
-    draw.text((panel[0] + 16, y), "☐ Enable recurring export (weekly)", fill=TEXT, font=font(11))
+    draw.text((panel[0] + 16, y), "FORMATS", fill=MUTED, font=font(10, True))
+    y += 18
+    for label in ["Universal JSON", "Markdown", "RAG JSONL", "Claude Project"]:
+        draw.text((panel[0] + 16, y), f"☑ {label}", fill=TEXT, font=font(11))
+        y += 20
 
-    rounded_rect(draw, (panel[0] + 16, panel[3] - 52, panel[2] - 16, panel[3] - 16), GREEN)
-    draw.text((panel[0] + 90, panel[3] - 42), "Export conversations", fill=WHITE, font=font(16, True))
+    rounded_rect(draw, (panel[0] + 16, panel[3] - 118, panel[2] - 16, panel[3] - 58), GREEN)
+    draw.text((panel[0] + 90, panel[3] - 108), "Export conversations", fill=WHITE, font=font(15, True))
+
+    draw.text((panel[0] + 16, panel[3] - 48), "REPORT AN ISSUE", fill=MUTED, font=font(9, True))
+    rounded_rect(draw, (panel[0] + 16, panel[3] - 34, panel[2] - 16, panel[3] - 12), (248, 255, 252), outline=(184, 224, 212))
+    draw.text((panel[0] + 24, panel[3] - 28), "Submit feedback on GitHub", fill=GREEN_DARK, font=font(10, True))
 
     rounded_rect(draw, (700, 150, 1220, 720), (245, 245, 245), outline=BORDER)
     draw.text((720, 170), "Supported sites", fill=TEXT, font=font(20, True))
@@ -188,38 +187,38 @@ def shot_floating_button():
 
 
 def shot_progress():
-    img, draw = base_canvas("Export Progress", "Real-time overlay while conversations are exported")
+    img, draw = base_canvas("Export Progress", "Discovers Projects, downloads chats and knowledge files")
     rounded_rect(draw, (200, 220, 1080, 580), (40, 40, 40))
     rounded_rect(draw, (390, 300, 890, 500), WHITE, radius=20)
     draw.text((430, 330), "AI Exporter", fill=TEXT, font=font(26, True))
-    draw.text((430, 375), "Downloading 12 of 48 conversations", fill=MUTED, font=font(18))
+    draw.text((430, 375), "Downloading Project files: Research Notes", fill=MUTED, font=font(17))
     rounded_rect(draw, (430, 410, 850, 430), BORDER)
-    rounded_rect(draw, (430, 410, 620, 430), GREEN)
-    draw.text((430, 445), "RAG pipeline architecture notes", fill=MUTED, font=font(14))
-    rounded_rect(draw, (430, 470, 530, 500), BORDER)
-    draw.text((450, 478), "Cancel", fill=MUTED, font=font(14))
+    rounded_rect(draw, (430, 410, 710, 430), GREEN)
+    draw.text((430, 445), "Found 84 conversations (3 projects)", fill=MUTED, font=font(14))
+    rounded_rect(draw, (430, 468, 890, 498), (248, 255, 252), outline=(184, 224, 212), radius=8)
+    draw.text((448, 478), "Report issue on GitHub", fill=GREEN_DARK, font=font(13, True))
     save_rgb_png(img, SCREENSHOTS / "03-export-progress.png")
 
 
 def shot_formats():
-    img, draw = base_canvas("Export Formats", "One ZIP — Notion, Obsidian, RAG JSONL, compliance, and more")
+    img, draw = base_canvas("Export Output", "One ZIP — chats, ChatGPT Projects, RAG, and knowledge files")
     folders = [
+        ("projects/Research/", "custom-instructions.txt", "Project instructions"),
+        ("projects/Research/", "knowledge-files/*.pdf", "Uploaded docs"),
+        ("projects/Research/", "markdown/*.md", "Project chats"),
+        ("chatgpt/", "export-index.json", "Main vs project counts"),
         ("universal/", "conversations.json", "Any AI tool"),
         ("rag/", "chunks.jsonl", "Embedding pipelines"),
         ("notion/", "*.md", "Notion pages"),
-        ("obsidian/", "*.md", "Obsidian vault"),
-        ("claude-project/", "knowledge/*.md", "Project import"),
-        ("gemini-import/", "paste-ready/*.txt", "Paste-ready import"),
-        ("html-bundle/", "index.html", "Offline reader"),
         ("compliance/", "manifest.json + audit-log.csv", "SHA-256 audit"),
     ]
     y = 150
     for folder, files, desc in folders:
-        rounded_rect(draw, (80, y, 1180, y + 72), WHITE, outline=BORDER)
-        draw.text((110, y + 14), folder, fill=GREEN_DARK, font=font(18, True))
-        draw.text((110, y + 40), files, fill=TEXT, font=font(14))
-        draw.text((900, y + 26), desc, fill=MUTED, font=font(16))
-        y += 82
+        rounded_rect(draw, (80, y, 1180, y + 68), WHITE, outline=BORDER)
+        draw.text((110, y + 12), folder, fill=GREEN_DARK, font=font(17, True))
+        draw.text((110, y + 36), files, fill=TEXT, font=font(13))
+        draw.text((900, y + 24), desc, fill=MUTED, font=font(15))
+        y += 74
     save_rgb_png(img, SCREENSHOTS / "04-export-formats.png")
 
 
@@ -258,8 +257,51 @@ def shot_panel():
     rounded_rect(draw, (740, 660, 960, 700), GREEN, radius=8)
     draw.text((770, 672), "↓ Download ZIP", fill=WHITE, font=font(13, True))
     rounded_rect(draw, (980, 660, 1200, 700), WHITE, outline=BORDER, radius=8)
-    draw.text((1010, 672), "Copy Notion", fill=TEXT, font=font(13))
+    draw.text((1000, 672), "Report issue", fill=GREEN_DARK, font=font(12))
     save_rgb_png(img, SCREENSHOTS / "05-export-panel.png")
+
+
+def shot_chatgpt_projects_docs():
+    img, draw = base_canvas(
+        "ChatGPT Projects Export",
+        "All project chats, custom instructions, and uploaded knowledge files",
+    )
+    rounded_rect(draw, (80, 170, 620, 700), WHITE, outline=BORDER)
+    draw.text((110, 200), "projects/Research Notes/", fill=GREEN_DARK, font=font(20, True))
+    items = [
+        "custom-instructions.txt",
+        "instructions.md",
+        "project.json",
+        "knowledge-manifest.json",
+        "knowledge-files/report.pdf",
+        "knowledge-files/spec.docx",
+        "markdown/architecture_chat.md",
+    ]
+    y = 250
+    for item in items:
+        prefix = "📄" if item.endswith((".txt", ".md", ".json")) else "📎"
+        draw.text((130, y), f"{prefix} {item}", fill=TEXT, font=font(16))
+        y += 42
+
+    rounded_rect(draw, (660, 170, 1200, 700), (245, 252, 250), outline=BORDER)
+    draw.text((690, 200), "Included in every export", fill=MUTED, font=font(14))
+    steps = [
+        "Main sidebar chat history",
+        "Chats inside each Project",
+        "Project custom instructions",
+        "PDFs & docs uploaded to Projects",
+        "Deduplicated by conversation ID",
+    ]
+    y = 240
+    for step in steps:
+        rounded_rect(draw, (690, y, 710, y + 18), GREEN, radius=9)
+        draw.text((696, y + 1), "✓", fill=WHITE, font=font(12, True))
+        draw.text((724, y), step, fill=TEXT, font=font(18))
+        y += 52
+
+    draw.text((690, 560), "chatgpt/export-index.json", fill=GREEN_DARK, font=font(15))
+    draw.text((690, 590), "Summary of main vs project conversation counts", fill=MUTED, font=font(14))
+    save_rgb_png(img, DOCS_SHOTS / "chatgpt-projects.png")
 
 
 def shot_claude_docs():
@@ -329,6 +371,7 @@ def main():
     shot_progress()
     shot_formats()
     shot_panel()
+    shot_chatgpt_projects_docs()
     shot_claude_docs()
     shot_gemini_docs()
     chrome_count = len(list(SCREENSHOTS.glob("[0-9]*.png")))

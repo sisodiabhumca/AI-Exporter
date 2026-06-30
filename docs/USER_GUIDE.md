@@ -30,7 +30,23 @@ When viewing any chat, click the green **Export chat** button in the bottom-righ
 
 ![Export progress overlay](../store-listing/screenshots/03-export-progress.png)
 
-A progress overlay shows on the ChatGPT page while exporting. You can cancel anytime. Large histories may take several minutes.
+A progress overlay shows while exporting — including discovering ChatGPT Projects and downloading knowledge files. You can cancel anytime. Large histories may take several minutes.
+
+---
+
+## ChatGPT Projects (full export)
+
+![ChatGPT Projects export](../store-listing/screenshots/docs/chatgpt-projects.png)
+
+When you export **All conversations** from ChatGPT, the ZIP includes:
+
+- Every chat in your main sidebar history
+- Every chat inside each ChatGPT Project (merged and deduplicated)
+- **Custom instructions** per Project (`custom-instructions.txt`, `instructions.md`)
+- **Uploaded knowledge files** (PDFs, docs) in `projects/{Project Name}/knowledge-files/`
+- `chatgpt/export-index.json` — summary counts
+
+Project chats are saved under `projects/{Project Name}/markdown/` (and other formats you select).
 
 ---
 
@@ -40,6 +56,8 @@ A progress overlay shows on the ChatGPT page while exporting. You can cancel any
 
 | Folder | Best for |
 |--------|----------|
+| `projects/{Name}/` | ChatGPT Project chats, instructions, and knowledge files |
+| `chatgpt/` | Export index and project knowledge error log |
 | `universal/` | Any AI tool — recommended starting point |
 | `claude-project/` | Upload directly to Claude Projects |
 | `gemini-import/` | Paste into Gemini or use Gemini API |
